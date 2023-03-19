@@ -1,0 +1,6 @@
+.vagrant/
+tmp/
+*.box
+*.box.json
+*.log
+output*

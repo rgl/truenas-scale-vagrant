@@ -1,0 +1,37 @@
+# to make sure the nodes are created in order, we
+# have to force a --no-parallel execution.
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
+CONFIG_TRUENAS_IP_ADDRESS = '10.10.0.2'
+
+Vagrant.configure(2) do |config|
+  config.vm.provider 'libvirt' do |lv, config|
+    lv.default_prefix = "#{File.basename(File.dirname(File.dirname(__FILE__)))}_"
+    lv.cpu_mode = 'host-passthrough'
+    lv.nested = true # nested virtualization.
+    lv.keymap = 'pt'
+    lv.disk_bus = 'scsi'
+    lv.disk_device = 'sda'
+    lv.disk_driver :discard => 'unmap', :cache => 'unsafe'
+  end
+
+  config.vm.define :truenas do |config|
+    config.vm.box = 'truenas-scale-22.12-amd64'
+    # config.vm.box = 'truenas-scale-22.12-uefi-amd64'
+    config.vm.provider 'libvirt' do |lv, config|
+      lv.memory = 8*1024
+      lv.cpus = 2
+      # add data disks.
+      lv.storage :file, :size => '32G', :bus => 'scsi', :discard => 'unmap', :cache => 'unsafe'
+      lv.storage :file, :size => '32G', :bus => 'scsi', :discard => 'unmap', :cache => 'unsafe'
+      lv.storage :file, :size => '32G', :bus => 'scsi', :discard => 'unmap', :cache => 'unsafe'
+      # configure the vagrant synced folder.
+      lv.memorybacking :source, :type => 'memfd'  # required for virtiofs.
+      lv.memorybacking :access, :mode => 'shared' # required for virtiofs.
+      config.vm.synced_folder '.', '/vagrant', type: 'virtiofs'
+      #config.vm.synced_folder '.', '/vagrant', type: 'nfs', nfs_version: '4.2', nfs_udp: false
+    end
+    config.vm.network :private_network, ip: CONFIG_TRUENAS_IP_ADDRESS, auto_config: false, libvirt__mtu: 9000, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
+    config.vm.provision 'shell', path: 'provision-truenas.sh', args: [CONFIG_TRUENAS_IP_ADDRESS]
+  end
+end
