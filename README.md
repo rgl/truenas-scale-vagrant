@@ -4,7 +4,7 @@ This builds a [TrueNAS SCALE](https://www.truenas.com/truenas-scale/) vagrant bo
 
 # Usage
 
-Install `packer`, `vagrant`, and `libvirt` (see the [rgl/my-ubuntu-ansible-playbooks repository](https://github.com/rgl/my-ubuntu-ansible-playbooks)).
+Install [`packer`](https://github.com/hashicorp/packer), [`vagrant`](https://github.com/hashicorp/vagrant), [`vagrant-libvirt`](https://github.com/vagrant-libvirt/vagrant-libvirt), and [`libvirt`](https://github.com/libvirt/libvirt) (see the [rgl/my-ubuntu-ansible-playbooks repository](https://github.com/rgl/my-ubuntu-ansible-playbooks)).
 
 Build the box and add it to the local vagrant installation:
 
