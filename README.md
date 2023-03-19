@@ -24,6 +24,23 @@ Open the Web UI:
 
 http://10.10.0.2
 
+Use the Web API:
+
+```bash
+ip_address='10.10.0.2'
+function api {
+    # see http://10.10.0.2/api/docs/#restful
+    # NB to use an api key, replace --user, --password and --auth-no-challenge,
+    #    with --header, e.g.:
+    #       wget -qO- --header "Authorization: Bearer $api_key" "$@"
+    wget -qO- --user root --password root --auth-no-challenge "$@"
+}
+api http://$ip_address/api/v2.0/system/state | jq -r
+api http://$ip_address/api/v2.0/system/general | jq
+api http://$ip_address/api/v2.0/disk | jq
+api http://$ip_address/api/v2.0/pool | jq
+```
+
 # Packer boot_steps
 
 As TrueNAS SCALE does not have a documented way to be pre-seeded, this environment has to
