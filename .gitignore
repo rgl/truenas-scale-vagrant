@@ -4,3 +4,4 @@ tmp/
 *.box.json
 *.log
 output*
+secrets*

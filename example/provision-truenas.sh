@@ -20,8 +20,11 @@ cli --command 'network interface query'
 
 # configure the network interfaces.
 # see cli --command 'network interface man update'
-cli --command "network interface update enp5s0 ipv4_dhcp=true ipv6_auto=false description=\"lan\""
-cli --command "network interface update enp6s0 aliases=[\"$ip_address/24\"] ipv4_dhcp=false ipv6_auto=false mtu=9000 description=\"storage\""
+interfaces=( $(ip link | perl -ne '/\d+: (en.+?): / && print "$1\n"') )
+lan_interface="${interfaces[0]}"
+storage_interface="${interfaces[1]}"
+cli --command "network interface update $lan_interface ipv4_dhcp=true ipv6_auto=false description=\"lan\""
+cli --command "network interface update $storage_interface aliases=[\"$ip_address/24\"] ipv4_dhcp=false ipv6_auto=false mtu=9000 description=\"storage\""
 cli --command 'network interface commit' && cli --command 'network interface checkin'
 
 # show the ip information after changes.
