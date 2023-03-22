@@ -2,6 +2,16 @@
 
 This builds a [TrueNAS SCALE](https://www.truenas.com/truenas-scale/) vagrant box.
 
+This also includes an example environment with:
+
+* TrueNAS SCALE server.
+    * `tank` storage pool.
+    * `ubuntu-data` zvol dataset.
+    * `ubuntu` iSCSI target share.
+        * LUN 1: `ubuntu-data` dataset.
+* Ubuntu client.
+    * `ubuntu-data` iSCSI LUN 1 initialized and mounted at `/mnt/ubuntu-data`.
+
 # Usage
 
 Depending on your hypervisor, build and install the base box and start the
@@ -29,11 +39,14 @@ api http://$ip_address/api/v2.0/system/state | jq -r
 api http://$ip_address/api/v2.0/system/general | jq
 api http://$ip_address/api/v2.0/disk | jq
 api http://$ip_address/api/v2.0/pool | jq
+api http://$ip_address/api/v2.0/pool/dataset | jq
 ```
 
 ## libvirt usage
 
 Install [`packer`](https://github.com/hashicorp/packer), [`vagrant`](https://github.com/hashicorp/vagrant), [`vagrant-libvirt`](https://github.com/vagrant-libvirt/vagrant-libvirt), and [`libvirt`](https://github.com/libvirt/libvirt) (see the [rgl/my-ubuntu-ansible-playbooks repository](https://github.com/rgl/my-ubuntu-ansible-playbooks)).
+
+Install the [Ubuntu 22.04 box](https://github.com/rgl/ubuntu-vagrant).
 
 Build the box and add it to the local vagrant installation:
 
@@ -46,12 +59,14 @@ Start the example:
 
 ```bash
 cd example
-time vagrant up --provider=libvirt --no-destroy-on-error --no-tty truenas
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty
 ```
 
 ## VMware vSphere usage
 
 Install [`govc`](https://github.com/vmware/govmomi) and [`vagrant-vsphere`](https://github.com/nsidc/vagrant-vsphere) (see the [rgl/my-ubuntu-ansible-playbooks repository](https://github.com/rgl/my-ubuntu-ansible-playbooks)).
+
+Install the [Ubuntu 22.04 box](https://github.com/rgl/ubuntu-vagrant).
 
 Set your vSphere details, and test the connection to vSphere:
 
@@ -69,8 +84,13 @@ export VSPHERE_OS_ISO="[$GOVC_DATASTORE] iso/TrueNAS-SCALE-22.12.1.iso"
 export VSPHERE_ESXI_HOST='esxi.local'
 export VSPHERE_TEMPLATE_FOLDER='test/templates'
 export VSPHERE_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/truenas-scale-22.12-amd64-vsphere"
+export VSPHERE_UBUNTU_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/ubuntu-22.04-amd64-vsphere"
 export VSPHERE_VM_FOLDER='test'
 export VSPHERE_VM_NAME='truenas-scale-22.12-vagrant-example'
+export VSPHERE_UBUNTU_VM_NAME='ubuntu-22.04-vagrant-example'
+# NB ensure that the associated vSwitch can use an 9000 MTU or modify the
+#    CONFIG_STORAGE_MTU variable value inside the Vagrantfile file to
+#    1500.
 export VSPHERE_VLAN='packer'
 # set the credentials that the guest will use
 # to connect to this host smb share.
@@ -103,7 +123,7 @@ Start the example:
 
 ```bash
 cd example
-time vagrant up --provider=vsphere --no-destroy-on-error --no-tty truenas
+time vagrant up --provider=vsphere --no-destroy-on-error --no-tty
 ```
 
 # Packer boot_steps

@@ -7,13 +7,17 @@ ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 ENV['VAGRANT_EXPERIMENTAL'] = 'typed_triggers'
 
 CONFIG_TRUENAS_IP_ADDRESS = '10.10.0.2'
+CONFIG_UBUNTU_IP_ADDRESS  = '10.10.0.3'
 
 CONFIG_STORAGE_DISKS        = ['sdb', 'sdc', 'sdd']
 CONFIG_STORAGE_DISK_SIZE_GB = 32
+CONFIG_STORAGE_MTU          = 9000
 
 require 'open3'
 
 Vagrant.configure(2) do |config|
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
   config.vm.provider 'libvirt' do |lv, config|
     lv.default_prefix = "#{File.basename(File.dirname(File.dirname(__FILE__)))}_"
     lv.cpu_mode = 'host-passthrough'
@@ -25,7 +29,6 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.provider 'vsphere' do |vsphere, config|
-    vsphere.name = ENV['VSPHERE_VM_NAME']
     vsphere.notes = "Created from #{__FILE__}"
     vsphere.user = ENV['GOVC_USERNAME']
     vsphere.password = ENV['GOVC_PASSWORD']
@@ -34,14 +37,25 @@ Vagrant.configure(2) do |config|
     vsphere.data_center_name = ENV['GOVC_DATACENTER']
     vsphere.compute_resource_name = ENV['GOVC_CLUSTER']
     vsphere.data_store_name = ENV['GOVC_DATASTORE']
-    vsphere.template_name = ENV['VSPHERE_TEMPLATE_NAME']
     vsphere.vm_base_path = ENV['VSPHERE_VM_FOLDER']
     vsphere.vlan = ENV['VSPHERE_VLAN']
-    if ENV['VAGRANT_SMB_PASSWORD']
-      config.vm.synced_folder '.', '/vagrant',
-        type: 'smb',
-        smb_username: ENV['VAGRANT_SMB_USERNAME'] || ENV['USER'],
-        smb_password: ENV['VAGRANT_SMB_PASSWORD']
+    config.trigger.after :'VagrantPlugins::VSphere::Action::Clone', type: :action do |trigger|
+      trigger.ruby do |env, machine|
+        # configure the network.
+        # see https://github.com/hashicorp/vagrant/blob/v2.2.10/lib/vagrant/machine.rb#L13
+        # see https://github.com/hashicorp/vagrant/blob/v2.2.10/plugins/kernel_v2/config/vm.rb#L716
+        interfaces = machine.config.vm.networks.select{|type, options| type == :private_network && options.key?(:ip)}.map do |type, options|
+          options[:ip]
+        end
+        stdout, stderr, status = Open3.capture3(
+          'bash',
+          'provision-vsphere-network.sh',
+          machine.id,
+          interfaces.to_json)
+        if status.exitstatus != 0
+          raise "failed to configure the network. status=#{status.exitstatus} stdout=#{stdout} stderr=#{stderr}"
+        end
+      end
     end
   end
 
@@ -55,31 +69,14 @@ Vagrant.configure(2) do |config|
       CONFIG_STORAGE_DISKS.each do |disk_name| 
         lv.storage :file, :size => "#{CONFIG_STORAGE_DISK_SIZE_GB}G", :bus => 'scsi', :discard => 'unmap', :cache => 'unsafe'
       end
-      # configure the vagrant synced folder.
-      lv.memorybacking :source, :type => 'memfd'  # required for virtiofs.
-      lv.memorybacking :access, :mode => 'shared' # required for virtiofs.
-      config.vm.synced_folder '.', '/vagrant', type: 'virtiofs'
-      #config.vm.synced_folder '.', '/vagrant', type: 'nfs', nfs_version: '4.2', nfs_udp: false
     end
     config.vm.provider 'vsphere' do |vsphere, config|
       vsphere.memory_mb = 8*1024
       vsphere.cpu_count = 2
+      vsphere.name = ENV['VSPHERE_VM_NAME']
+      vsphere.template_name = ENV['VSPHERE_TEMPLATE_NAME']
       config.trigger.after :'VagrantPlugins::VSphere::Action::Clone', type: :action do |trigger|
         trigger.ruby do |env, machine|
-          # configure the network.
-          # see https://github.com/hashicorp/vagrant/blob/v2.2.10/lib/vagrant/machine.rb#L13
-          # see https://github.com/hashicorp/vagrant/blob/v2.2.10/plugins/kernel_v2/config/vm.rb#L716
-          interfaces = machine.config.vm.networks.select{|type, options| type == :private_network && options.key?(:auto_config) && !options[:auto_config]}.map do |type, options|
-            options[:ip]
-          end
-          stdout, stderr, status = Open3.capture3(
-            'bash',
-            'provision-vsphere-network.sh',
-            machine.id,
-            interfaces.to_json)
-          if status.exitstatus != 0
-            raise "failed to configure the network. status=#{status.exitstatus} stdout=#{stdout} stderr=#{stderr}"
-          end
           # add the storage disks.
           CONFIG_STORAGE_DISKS.each do |disk_name| 
             stdout, stderr, status = Open3.capture3(
@@ -95,7 +92,24 @@ Vagrant.configure(2) do |config|
         end
       end
     end
-    config.vm.network :private_network, ip: CONFIG_TRUENAS_IP_ADDRESS, auto_config: false, libvirt__mtu: 9000, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
-    config.vm.provision 'shell', path: 'provision-truenas.sh', args: [CONFIG_TRUENAS_IP_ADDRESS]
+    config.vm.network :private_network, ip: CONFIG_TRUENAS_IP_ADDRESS, auto_config: false, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
+    config.vm.provision 'shell', path: 'provision-truenas.sh', args: [CONFIG_TRUENAS_IP_ADDRESS, CONFIG_STORAGE_MTU]
+  end
+
+  config.vm.define :ubuntu do |config|
+    config.vm.box = 'ubuntu-22.04-amd64'
+    # config.vm.box = 'ubuntu-22.04-uefi-amd64'
+    config.vm.provider 'libvirt' do |lv, config|
+      lv.memory = 2*1024
+      lv.cpus = 2
+    end
+    config.vm.provider 'vsphere' do |vsphere, config|
+      vsphere.memory_mb = 2*1024
+      vsphere.cpu_count = 2
+      vsphere.name = ENV['VSPHERE_UBUNTU_VM_NAME']
+      vsphere.template_name = ENV['VSPHERE_UBUNTU_TEMPLATE_NAME']
+    end
+    config.vm.network :private_network, ip: CONFIG_UBUNTU_IP_ADDRESS, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
+    config.vm.provision 'shell', path: 'provision-ubuntu.sh', args: [CONFIG_UBUNTU_IP_ADDRESS, CONFIG_TRUENAS_IP_ADDRESS, CONFIG_STORAGE_MTU]
   end
 end
