@@ -67,6 +67,10 @@ volblocksize='16K' # NB for some odd readon, this is not a decimal like volsize 
 cli --command "storage dataset create name=\"tank/ubuntu-data\" type=VOLUME volsize=$volsize volblocksize=\"$volblocksize\""
 zfs get all tank/ubuntu-data
 
+# create the windows-data zvol.
+cli --command "storage dataset create name=\"tank/windows-data\" type=VOLUME volsize=$volsize volblocksize=\"$volblocksize\""
+zfs get all tank/windows-data
+
 # show all datasets.
 cli --mode csv --command 'storage dataset query'
 
@@ -93,6 +97,19 @@ cli --command "sharing iscsi target create name=\"ubuntu\" mode=ISCSI groups=[{\
 cli --command 'sharing iscsi extent create name="ubuntu-data" type=DISK disk="zvol/tank/ubuntu-data" blocksize=4096 rpm=SSD'
 target_id="$(cli --mode csv --command 'sharing iscsi target query' | perl -ne '/^(\d+),ubuntu,/ && print $1')"
 extent_id="$(cli --mode csv --command 'sharing iscsi extent query' | perl -ne '/^(\d+),ubuntu-data,/ && print $1')"
+# TODO implement using the cli.
+# see iscsi_targetextent_create in the api docs.
+api \
+    --header 'Content-Type:application/json' \
+    --post-data "{\"target\":$target_id,\"lunid\":1,\"extent\":$extent_id}" \
+    "http://$ip_address/api/v2.0/iscsi/targetextent"
+
+# share the windows-data volume.
+# see iscsi_target_create in the api docs.
+cli --command "sharing iscsi target create name=\"windows\" mode=ISCSI groups=[{\"portal\":$portal_id,\"initiator\":$initiator_id}] auth_networks=[\"$ip_address/24\"]"
+cli --command 'sharing iscsi extent create name="windows-data" type=DISK disk="zvol/tank/windows-data" blocksize=4096 rpm=SSD'
+target_id="$(cli --mode csv --command 'sharing iscsi target query' | perl -ne '/^(\d+),windows,/ && print $1')"
+extent_id="$(cli --mode csv --command 'sharing iscsi extent query' | perl -ne '/^(\d+),windows-data,/ && print $1')"
 # TODO implement using the cli.
 # see iscsi_targetextent_create in the api docs.
 api \

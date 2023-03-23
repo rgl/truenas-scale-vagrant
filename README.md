@@ -7,10 +7,15 @@ This also includes an example environment with:
 * TrueNAS SCALE server.
     * `tank` storage pool.
     * `ubuntu-data` zvol dataset.
+    * `windows-data` zvol dataset.
     * `ubuntu` iSCSI target share.
         * LUN 1: `ubuntu-data` dataset.
+    * `windows` iSCSI target share.
+        * LUN 1: `windows-data` dataset.
 * Ubuntu client.
     * `ubuntu-data` iSCSI LUN 1 initialized and mounted at `/mnt/ubuntu-data`.
+* Windows client.
+    * `windows-data` iSCSI LUN 1 initialized and mounted at `D:`.
 
 # Usage
 
@@ -48,6 +53,8 @@ Install [`packer`](https://github.com/hashicorp/packer), [`vagrant`](https://git
 
 Install the [Ubuntu 22.04 box](https://github.com/rgl/ubuntu-vagrant).
 
+Install the [Windows 2022 box](https://github.com/rgl/windows-vagrant).
+
 Build the box and add it to the local vagrant installation:
 
 ```bash
@@ -66,7 +73,11 @@ time vagrant up --provider=libvirt --no-destroy-on-error --no-tty
 
 Install [`govc`](https://github.com/vmware/govmomi) and [`vagrant-vsphere`](https://github.com/nsidc/vagrant-vsphere) (see the [rgl/my-ubuntu-ansible-playbooks repository](https://github.com/rgl/my-ubuntu-ansible-playbooks)).
 
+Apply the [vagrant-vsphere plugin ip-wait patch](https://github.com/rgl/my-ubuntu-ansible-playbooks/blob/main/roles/vagrant/files/vagrant-vsphere-ip-wait.patch).
+
 Install the [Ubuntu 22.04 box](https://github.com/rgl/ubuntu-vagrant).
+
+Install the [Windows 2022 box](https://github.com/rgl/windows-vagrant).
 
 Set your vSphere details, and test the connection to vSphere:
 
@@ -85,13 +96,16 @@ export VSPHERE_ESXI_HOST='esxi.local'
 export VSPHERE_TEMPLATE_FOLDER='test/templates'
 export VSPHERE_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/truenas-scale-22.12-amd64-vsphere"
 export VSPHERE_UBUNTU_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/ubuntu-22.04-amd64-vsphere"
+export VSPHERE_WINDOWS_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/windows-2022-amd64-vsphere"
 export VSPHERE_VM_FOLDER='test'
 export VSPHERE_VM_NAME='truenas-scale-22.12-vagrant-example'
 export VSPHERE_UBUNTU_VM_NAME='ubuntu-22.04-vagrant-example'
+export VSPHERE_WINDOWS_VM_NAME='windows-2022-vagrant-example'
 # NB ensure that the associated vSwitch can use an 9000 MTU or modify the
 #    CONFIG_STORAGE_MTU variable value inside the Vagrantfile file to
 #    1500.
 export VSPHERE_VLAN='packer'
+export VSPHERE_IP_WAIT_ADDRESS='0.0.0.0/0'
 # set the credentials that the guest will use
 # to connect to this host smb share.
 # NB you should create a new local user named _vagrant_share
