@@ -19,6 +19,12 @@ This also includes an example environment with:
 
 # Usage
 
+Add the following entries to your machine `hosts` file:
+
+```
+10.10.0.2 truenas.example.com
+```
+
 Depending on your hypervisor, build and install the base box and start the
 example environment:
 
@@ -27,24 +33,24 @@ example environment:
 
 After the example environment is running, open the Web UI:
 
-http://10.10.0.2
+http://truenas.example.com
 
 Use the Web API:
 
 ```bash
-ip_address='10.10.0.2'
+truenas_api_base_url='http://truenas.example.com/api/v2.0'
 function api {
-    # see http://10.10.0.2/api/docs/#restful
+    # see http://truenas.example.com/api/docs/#restful
     # NB to use an api key, replace --user, --password and --auth-no-challenge,
     #    with --header, e.g.:
     #       wget -qO- --header "Authorization: Bearer $api_key" "$@"
-    wget -qO- --user root --password root --auth-no-challenge "$@"
+    wget -qO- --user root --password root --auth-no-challenge "$truenas_api_base_url/$@"
 }
-api http://$ip_address/api/v2.0/system/state | jq -r
-api http://$ip_address/api/v2.0/system/general | jq
-api http://$ip_address/api/v2.0/disk | jq
-api http://$ip_address/api/v2.0/pool | jq
-api http://$ip_address/api/v2.0/pool/dataset | jq
+api system/state | jq -r
+api system/general | jq
+api disk | jq
+api pool | jq
+api pool/dataset | jq
 ```
 
 ## libvirt usage
