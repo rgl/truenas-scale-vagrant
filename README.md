@@ -6,12 +6,12 @@ This also includes an example environment with:
 
 * TrueNAS SCALE server.
     * `tank` storage pool.
-    * `ubuntu-data` zvol dataset.
-    * `windows-data` zvol dataset.
+    * `tank/ubuntu-data` zvol dataset.
+    * `tank/windows-data` zvol dataset.
     * `ubuntu` iSCSI target share.
-        * LUN 1: `ubuntu-data` dataset.
+        * LUN 1: `tank/ubuntu-data` dataset.
     * `windows` iSCSI target share.
-        * LUN 1: `windows-data` dataset.
+        * LUN 1: `tank/windows-data` dataset.
 * Ubuntu client.
     * `ubuntu-data` iSCSI LUN 1 initialized and mounted at `/mnt/ubuntu-data`.
 * Windows client.
