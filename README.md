@@ -8,14 +8,19 @@ This also includes an example environment with:
     * `tank` storage pool.
     * `tank/ubuntu-data` zvol dataset.
     * `tank/windows-data` zvol dataset.
+    * `tank/k3s/v/pvc-` prefixed zvol datasets.
     * `ubuntu` iSCSI target share.
         * LUN 1: `tank/ubuntu-data` dataset.
     * `windows` iSCSI target share.
         * LUN 1: `tank/windows-data` dataset.
+    * `csi-k3s-pvc-` prefixed iSCSI target shares.
+        * LUN 0: `tank/k3s/v/pvc-` prefixed dataset for a Kubernetes PVC.
 * Ubuntu client.
     * `ubuntu-data` iSCSI LUN 1 initialized and mounted at `/mnt/ubuntu-data`.
 * Windows client.
     * `windows-data` iSCSI LUN 1 initialized and mounted at `D:`.
+* Kubernetes client.
+    * iSCSI LUN initialized and mounted for a Kubernetes Persistent Volume Claims (PVC).
 
 # Usage
 
@@ -23,6 +28,7 @@ Add the following entries to your machine `hosts` file:
 
 ```
 10.10.0.2 truenas.example.com
+10.10.0.4 git.example.com
 ```
 
 Depending on your hypervisor, build and install the base box and start the
@@ -52,6 +58,11 @@ api disk | jq
 api pool | jq
 api pool/dataset | jq
 ```
+
+Access the gitea example kubernetes application (which uses iSCSI persistent
+storage) and login with the `gitea` username and the `abracadabra` password:
+
+http://git.example.com
 
 ## libvirt usage
 
@@ -106,6 +117,7 @@ export VSPHERE_WINDOWS_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/windows-2022-amd6
 export VSPHERE_VM_FOLDER='test'
 export VSPHERE_VM_NAME='truenas-scale-22.12-vagrant-example'
 export VSPHERE_UBUNTU_VM_NAME='ubuntu-22.04-vagrant-example'
+export VSPHERE_K3S_VM_NAME='ubuntu-22.04-k3s-vagrant-example'
 export VSPHERE_WINDOWS_VM_NAME='windows-2022-vagrant-example'
 # NB ensure that the associated vSwitch can use an 9000 MTU or modify the
 #    CONFIG_STORAGE_MTU variable value inside the Vagrantfile file to
@@ -182,3 +194,4 @@ current steps and corresponding answers.
 * [Using the TrueNAS CLI Shell](https://www.truenas.com/docs/scale/scaletutorials/truenasclishell/)
 * [midcli: TrueNAS SCALE CLI](https://github.com/truenas/midcli)
 * [truenas-installer: TrueNAS SCALE Installer](https://github.com/truenas/truenas-installer/blob/TS-22.12.1/usr/sbin/truenas-install)
+* [democratic-csi: TrueNAS SCALE Kubernetes CSI provider](https://github.com/democratic-csi/democratic-csi)
