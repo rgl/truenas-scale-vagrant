@@ -221,3 +221,6 @@ kubectl get pv -A
 
 # get the gitea resources.
 kubectl get all -n gitea
+
+# get all the ingresses.
+kubectl get ingress -A
