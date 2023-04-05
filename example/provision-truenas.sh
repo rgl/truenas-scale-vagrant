@@ -98,6 +98,7 @@ cli --mode csv --command 'storage pool query'
 # create local zfs volumes and share them as iscsi volumes.
 create-volume ubuntu-data $((1*GiB)) 4096
 create-volume windows-data $((1*GiB)) 4096
+create-volume opensuse-boot $((16*GiB)) 512
 
 # show zfs status.
 zpool status -v

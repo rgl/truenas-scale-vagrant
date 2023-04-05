@@ -1,5 +1,5 @@
 param(
-    [string]$storageIpAddress = '10.10.0.4',
+    [string]$storageIpAddress = '10.10.0.12',
     [string]$iscsiPortal = '10.10.0.2',
     [int]$storageMtu = 9000
 )

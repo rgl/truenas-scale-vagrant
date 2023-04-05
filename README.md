@@ -8,17 +8,22 @@ This also includes an example environment with:
     * `tank` storage pool.
     * `tank/ubuntu-data` zvol dataset.
     * `tank/windows-data` zvol dataset.
+    * `tank/opensuse-boot` zvol dataset.
     * `tank/k3s/v/pvc-` prefixed zvol datasets.
     * `ubuntu` iSCSI target share.
         * LUN 0: `tank/ubuntu-data` dataset.
     * `windows` iSCSI target share.
         * LUN 0: `tank/windows-data` dataset.
+    * `opensuse-boot` iSCSI target share.
+        * LUN 0: `tank/opensuse-boot` dataset.
     * `csi-k3s-pvc-` prefixed iSCSI target shares.
         * LUN 0: `tank/k3s/v/pvc-` prefixed dataset for a Kubernetes PVC.
 * Ubuntu client.
     * `ubuntu-data` iSCSI LUN 0 initialized and mounted at `/mnt/ubuntu-data`.
 * Windows client.
     * `windows-data` iSCSI LUN 0 initialized and mounted at `D:`.
+* iPXE and openSUSE client.
+    * `opensuse-boot` iSCSI LUN 0 used as the boot disk.
 * Kubernetes client.
     * iSCSI LUN initialized and mounted for a Kubernetes Persistent Volume Claims (PVC).
 
@@ -27,8 +32,8 @@ This also includes an example environment with:
 Add the following entries to your machine `hosts` file:
 
 ```
-10.10.0.2 truenas.example.com
-10.10.0.4 git.example.com
+10.10.0.2  truenas.example.com
+10.10.0.11 git.example.com
 ```
 
 Depending on your hypervisor, build and install the base box and start the
@@ -79,11 +84,239 @@ time make build-libvirt
 vagrant box add -f truenas-scale-22.12-amd64 truenas-scale-22.12-amd64-libvirt.box.json
 ```
 
-Start the example:
+Download the example ISOs:
 
 ```bash
-cd example
-time vagrant up --provider=libvirt --no-destroy-on-error --no-tty
+pushd example
+wget -O openSUSE-Leap-15.4-NET-x86_64-Media.iso \
+    https://download.opensuse.org/distribution/leap/15.4/iso/openSUSE-Leap-15.4-NET-x86_64-Media.iso
+popd
+```
+
+Start the common VMs:
+
+```bash
+pushd example
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty truenas pixie
+```
+
+Then, depending in what you want to try, follow the next sections.
+
+### ubuntu
+
+Start:
+
+```bash
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty ubuntu
+```
+
+### k3s
+
+Start:
+
+```bash
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty k3s
+```
+
+### windows
+
+Start:
+
+```bash
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty windows
+```
+
+### opensuse_boot example
+
+Start:
+
+```bash
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty opensuse_boot
+```
+
+Open the VM console.
+
+Advance the installer to the `Disk Activation` page:
+
+![](example/opensuse-boot-disk-activation-0.png)
+
+Click the `Network Configuration...` button. You should now see the `Network Settings` page:
+
+![](example/opensuse-boot-network-settings-0.png)
+
+Select the `Ethernet Card 0` (`eth1`), and click the `Edit` button. You should now see the `Network Card Setup` page:
+
+![](example/opensuse-boot-network-card-setup-0.png)
+
+Click the `Dynamic Address` radio button, and select `DHCP`.
+
+Click the `Next` button. You should now see the `Network Settings` page:
+
+![](example/opensuse-boot-network-settings-1.png)
+
+Ensure both network cards are configured with `DHCP`.
+
+Click the `Next` button. Eventually, you should see the `Disk Activation` page again:
+
+![](example/opensuse-boot-disk-activation-1.png)
+
+Click the `Configure iSCSI Disks` button. You should see the `iSCSI Initiator Overview` page:
+
+![](example/opensuse-boot-iscsi-initiator-service-page.png)
+
+Ensure the following properties are set:
+
+| Property       | Value                               |
+|----------------|-------------------------------------|
+| Initiator Name | `iqn.2010-04.org.ipxe:080027000020` |
+| Offload Card   | `default (Software)`                |
+
+Click the `Connected Targets` tab. Then, click the `Add` button. Then set the properties as:
+
+![](example/opensuse-boot-iscsi-target.png)
+
+| Property       | Value       |
+|----------------|-------------|
+| IP Address     | `10.10.0.2` |
+| Port           | `3260`      |
+
+Click the `Next` button. You should see the page:
+
+![](example/opensuse-boot-iscsi-volume.png)
+
+Select the `iqn.2005.org.freenas.ctl:opensuse-boot` target name, and click the `Connect` button.
+
+Set as:
+
+![](example/opensuse-boot-iscsi-volume-config.png)
+
+Click the `Next` button, then click the `Cancel` button. You should now be back at the `Disk Activation` page:
+
+![](example/opensuse-boot-disk-activation-1.png)
+
+Click the `Next` button. You should advance the installer until the `Disk` `Suggested Partitioning` page:
+
+![](example/opensuse-boot-disk-suggested-partitioning.png)
+
+Click the `Next` button.
+
+Advance the installer until the installation finishes.
+
+Power-off the VM.
+
+Configure the VM to boot from the second ethernet interface as:
+
+![](example/opensuse-boot-vm-boot-from-network.png)
+
+Start the VM.
+
+Login into the VM.
+
+Dump the IP configuration:
+
+```bash
+ip addr
+```
+```
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 52:54:00:26:21:08 brd ff:ff:ff:ff:ff:ff
+    altname enp7s0
+    inet 192.168.121.82/24 brd 192.168.121.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe26:2108/64 scope link
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 08:00:27:00:00:20 brd ff:ff:ff:ff:ff:ff
+    altname enp8s0
+    inet 10.10.0.20/24 brd 10.10.0.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a00:27ff:fe00:20/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+Dump the iSCSI initiator name from the iBFT:
+
+```bash
+cat /sys/firmware/ibft/initiator/initiator-name
+```
+```
+iqn.2010-04.org.ipxe:080027000020
+```
+
+Dump the iSCSI target from the iBFT:
+
+```bash
+cat /sys/firmware/ibft/target0/target-name
+```
+```
+iqn.2005-10.org.freenas.ctl:opensuse-boot
+```
+
+Dump the iSCSI initiator name from the iscsid configuration:
+
+```bash
+cat /etc/iscsi/initiatorname.iscsi
+```
+```
+InitiatorName=iqn.2010-04.org.ipxe:080027000020
+```
+
+Show the open iSCSI sessions:
+
+```bash
+iscsiadm -m session
+```
+```
+tcp: [1] 10.10.0.2:3260,1 iqn.2005-10.org.freenas.ctl:opensuse-boot (non-flash)
+```
+
+Show the detected partitions:
+
+```bash
+fdisk -l
+```
+```
+Disk /dev/sda: 16 GiB, 17179869184 bytes, 33554432 sectors
+Disk model: iSCSI Disk
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 16384 bytes
+I/O size (minimum/optimal): 16384 bytes / 16384 bytes
+Disklabel type: gpt
+Disk identifier: B69FEE1E-B688-4E93-8F45-0C3B98C48752
+
+Device     Start      End  Sectors Size Type
+/dev/sda1   2048    18431    16384   8M BIOS boot
+/dev/sda2  18432 33554398 33535967  16G Linux filesystem
+```
+
+Show the free space:
+
+```bash
+df -h
+```
+```
+Filesystem      Size  Used Avail Use% Mounted on
+devtmpfs        4.0M     0  4.0M   0% /dev
+tmpfs           985M     0  985M   0% /dev/shm
+tmpfs           394M  6.0M  388M   2% /run
+tmpfs           4.0M     0  4.0M   0% /sys/fs/cgroup
+/dev/sda2        16G  1.9G   14G  13% /
+/dev/sda2        16G  1.9G   14G  13% /boot/grub2/i386-pc
+/dev/sda2        16G  1.9G   14G  13% /home
+/dev/sda2        16G  1.9G   14G  13% /boot/grub2/x86_64-efi
+/dev/sda2        16G  1.9G   14G  13% /root
+/dev/sda2        16G  1.9G   14G  13% /opt
+/dev/sda2        16G  1.9G   14G  13% /srv
+/dev/sda2        16G  1.9G   14G  13% /tmp
+/dev/sda2        16G  1.9G   14G  13% /usr/local
+/dev/sda2        16G  1.9G   14G  13% /var
+tmpfs           197M     0  197M   0% /run/user/1000
 ```
 
 ## VMware vSphere usage
@@ -116,6 +349,7 @@ export VSPHERE_UBUNTU_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/ubuntu-22.04-amd64
 export VSPHERE_WINDOWS_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/windows-2022-amd64-vsphere"
 export VSPHERE_VM_FOLDER='test'
 export VSPHERE_VM_NAME='truenas-scale-22.12-vagrant-example'
+export VSPHERE_PIXIE_VM_NAME='ubuntu-22.04-pixie-vagrant-example'
 export VSPHERE_UBUNTU_VM_NAME='ubuntu-22.04-vagrant-example'
 export VSPHERE_K3S_VM_NAME='ubuntu-22.04-k3s-vagrant-example'
 export VSPHERE_WINDOWS_VM_NAME='windows-2022-vagrant-example'

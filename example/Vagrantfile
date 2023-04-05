@@ -6,10 +6,13 @@ ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 # NB this is needed to modify the vSphere VMs.
 ENV['VAGRANT_EXPERIMENTAL'] = 'typed_triggers'
 
-CONFIG_TRUENAS_IP_ADDRESS = '10.10.0.2'
-CONFIG_UBUNTU_IP_ADDRESS  = '10.10.0.3'
-CONFIG_K3S_IP_ADDRESS     = '10.10.0.4'
-CONFIG_WINDOWS_IP_ADDRESS = '10.10.0.5'
+CONFIG_TRUENAS_IP_ADDRESS         = '10.10.0.2'
+CONFIG_PIXIE_IP_ADDRESS           = '10.10.0.3'
+CONFIG_UBUNTU_IP_ADDRESS          = '10.10.0.10'
+CONFIG_K3S_IP_ADDRESS             = '10.10.0.11'
+CONFIG_WINDOWS_IP_ADDRESS         = '10.10.0.12'
+CONFIG_OPENSUSE_BOOT_IP_ADDRESS   = '10.10.0.20'
+CONFIG_OPENSUSE_BOOT_MAC_ADDRESS  = '08:00:27:00:00:20'
 
 CONFIG_STORAGE_DISKS        = ['sdb', 'sdc', 'sdd']
 CONFIG_STORAGE_DISK_SIZE_GB = 32
@@ -96,6 +99,41 @@ Vagrant.configure(2) do |config|
     end
     config.vm.network :private_network, ip: CONFIG_TRUENAS_IP_ADDRESS, auto_config: false, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
     config.vm.provision 'shell', path: 'provision-truenas.sh', args: [CONFIG_TRUENAS_IP_ADDRESS, CONFIG_STORAGE_MTU]
+  end
+
+  config.vm.define :pixie do |config|
+    config.vm.hostname = 'pixie'
+    config.vm.box = 'ubuntu-22.04-amd64'
+    # config.vm.box = 'ubuntu-22.04-uefi-amd64'
+    config.vm.provider 'libvirt' do |lv, config|
+      lv.memory = 1*1024
+      lv.cpus = 2
+    end
+    config.vm.provider 'vsphere' do |vsphere, config|
+      vsphere.memory_mb = 1*1024
+      vsphere.cpu_count = 2
+      vsphere.name = ENV['VSPHERE_PIXIE_VM_NAME']
+      vsphere.template_name = ENV['VSPHERE_UBUNTU_TEMPLATE_NAME']
+    end
+    config.vm.network :private_network, ip: CONFIG_PIXIE_IP_ADDRESS, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
+    config.vm.provision 'shell', path: 'provision-common.sh', args: [CONFIG_PIXIE_IP_ADDRESS, CONFIG_STORAGE_MTU]
+    config.vm.provision 'shell', path: 'provision-pixie.sh', args: [CONFIG_PIXIE_IP_ADDRESS, CONFIG_TRUENAS_IP_ADDRESS, CONFIG_STORAGE_MTU]
+  end
+
+  config.vm.define :opensuse_boot do |config|
+    config.vm.box = nil
+    config.vm.provider 'libvirt' do |lv, config|
+      lv.memory = 2*1024
+      lv.cpus = 2
+      lv.machine_type = 'q35'
+      lv.random :model => 'random'
+      lv.graphics_type = 'spice'
+      lv.video_type = 'qxl'
+      lv.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
+      lv.channel :type => 'spicevmc', :target_name => 'com.redhat.spice.0', :target_type => 'virtio'
+      lv.storage :file, :device => :cdrom, :bus => 'scsi', :path => "#{File.dirname(__FILE__)}/openSUSE-Leap-15.4-NET-x86_64-Media.iso"
+    end
+    config.vm.network :private_network, mac: CONFIG_OPENSUSE_BOOT_MAC_ADDRESS, ip: CONFIG_OPENSUSE_BOOT_IP_ADDRESS, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
   end
 
   config.vm.define :ubuntu do |config|

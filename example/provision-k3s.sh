@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-ip_address="${1:-10.10.0.4}"
+ip_address="${1:-10.10.0.11}"
 truenas_ip_address="${2:-10.10.0.2}"
 k3s_version="${3:-v1.26.2+k3s1}"
 k9s_version="${4:-v0.27.3}"
