@@ -43,18 +43,26 @@ New-IscsiTargetPortal `
     -TargetPortalAddress $iscsiPortal `
     -TargetPortalPortNumber 3260 `
     | Out-Null
-Get-IscsiTarget
-$iscsiTargetAddress = 'iqn.2005-10.org.freenas.ctl:windows'
+Get-IscsiTarget | ForEach-Object {
+    Write-Output "Available iSCSI Target: $($_.NodeAddress)"
+}
+$iscsiTargetAddress = 'iqn.2005-10.org.freenas.ctl:windows-data'
 Connect-IscsiTarget `
     -NodeAddress $iscsiTargetAddress `
-    -IsPersistent:$true
+    -IsPersistent:$true `
+    | Out-Null
 Get-Disk | Where-Object { $_.BusType -eq 'iSCSI' } | ForEach-Object {
     $disk = $_
     $session = $disk | Get-IscsiSession
     if (!$session -or $session.TargetNodeAddress -ne $iscsiTargetAddress) {
         return
     }
-    if ($disk.Number -ne 1) { # LUN.
+    $diskDrive = Get-CimInstance Win32_DiskDrive -Filter "Index='$($disk.DiskNumber)'"
+    if (!$diskDrive) {
+        return
+    }
+    $lun = $diskDrive.SCSILogicalUnit
+    if ($lun -ne 0) {
         return
     }
     if ($disk.IsOffline) {
@@ -62,12 +70,15 @@ Get-Disk | Where-Object { $_.BusType -eq 'iSCSI' } | ForEach-Object {
         $disk | Set-Disk -IsOffline:$false
     }
     if ($disk.PartitionStyle -eq 'RAW') {
-        Write-Host "Initializing LUN #$($disk.Number) ($($disk.Size) bytes)..."
+        Write-Host "Initializing LUN #$lun ($($disk.Size) bytes)..."
         $volume = $disk `
           | Initialize-Disk -PartitionStyle GPT -PassThru `
           | New-Partition -AssignDriveLetter -UseMaximumSize `
           | Format-Volume -FileSystem NTFS -NewFileSystemLabel 'windows-data' -Confirm:$false
-        Write-Host "Initialized LUN #$($_.Number) ($($_.Size) bytes) as $($volume.DriveLetter):."
+        Write-Host "Initialized LUN #$lun ($($_.Size) bytes) as $($volume.DriveLetter):."
         $disk = $disk | Get-Disk
     }
+}
+Get-IscsiTarget | Where-Object { $_.IsConnected } | ForEach-Object {
+    Write-Output "Connected iSCSI Target: $($_.NodeAddress)"
 }

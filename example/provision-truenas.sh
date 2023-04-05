@@ -4,6 +4,9 @@ set -euxo pipefail
 ip_address="${1:-10.10.0.2}"
 mtu="${2:-9000}"
 
+KiB=$((1024))
+MiB=$((1024*KiB))
+GiB=$((1024*MiB))
 
 function api {
     # see http://10.10.0.2/api/docs/#restful
@@ -13,6 +16,31 @@ function api {
     wget -qO- --user root --password root --auth-no-challenge "$@"
 }
 
+# create an local zfs volume and share it as an iscsi volume at lun 0.
+function create-volume {
+    local name="$1"
+    local volsize="$2"
+    local volblocksize='16K' # NB for some odd readon, this is not a decimal like volsize (or both are not strings).
+    local shareblocksize="${3:-512}" # NB iPXE/BIOS/int13 can only read 512-byte blocks.
+    local ro="${4:-false}"
+    local portal_id="$(cli --mode csv --command 'sharing iscsi portal query' | perl -ne '/^(\d+),\d+,storage,/ && print $1')"
+    local initiator_id="$(api "http://$ip_address/api/v2.0/iscsi/initiator" | jq -r '.[] | select(.comment=="storage") | .id')"
+    # create the zfs volume.
+    cli --command "storage dataset create name=\"tank/$name\" type=VOLUME volsize=$volsize volblocksize=\"$volblocksize\""
+    zfs get all "tank/$name"
+    # share the zfs volume.
+    # see iscsi_target_create in the api docs.
+    cli --command "sharing iscsi target create name=\"$name\" mode=ISCSI groups=[{\"portal\":$portal_id,\"initiator\":$initiator_id}] auth_networks=[\"$ip_address/24\"]"
+    cli --command "sharing iscsi extent create name=\"$name\" type=DISK disk=\"zvol/tank/$name\" blocksize=$shareblocksize rpm=SSD ro=$ro"
+    target_id="$(cli --mode csv --command 'sharing iscsi target query' | perl -ne "/^(\d+),$name,/ && print \$1")"
+    extent_id="$(cli --mode csv --command 'sharing iscsi extent query' | perl -ne "/^(\d+),$name,/ && print \$1")"
+    # TODO implement using the cli.
+    # see iscsi_targetextent_create in the api docs.
+    api \
+        --header 'Content-Type:application/json' \
+        --post-data "{\"target\":$target_id,\"lunid\":0,\"extent\":$extent_id}" \
+        "http://$ip_address/api/v2.0/iscsi/targetextent"
+}
 
 #
 # wait for the system to be ready.
@@ -46,6 +74,17 @@ cli --command 'network interface query'
 #
 # configure the storage,
 
+# create the iscsi storage portal.
+cli --command "sharing iscsi portal create comment=storage listen=[{\"ip\":\"$ip_address\"}]"
+
+# create the iscsi storage initiators group.
+# TODO implement using the cli.
+# see iscsi_initiator_create in the api docs.
+api \
+    --header 'Content-Type:application/json' \
+    --post-data "{\"comment\":\"storage\",\"initiators\":[]}" \
+    "http://$ip_address/api/v2.0/iscsi/initiator"
+
 # create the tank pool with the sdb/sdc/sdd disks.
 cli --command 'storage disk query'
 pool_topology='{
@@ -56,66 +95,15 @@ pool_topology='{
 cli --command "storage pool create name=tank topology=$pool_topology"
 cli --mode csv --command 'storage pool query'
 
-# define the zvol size.
-KiB=$((1024))
-MiB=$((1024*KiB))
-GiB=$((1024*MiB))
-volsize=$((10*GiB))
-volblocksize='16K' # NB for some odd readon, this is not a decimal like volsize (or both are not strings).
+# create local zfs volumes and share them as iscsi volumes.
+create-volume ubuntu-data $((1*GiB)) 4096
+create-volume windows-data $((1*GiB)) 4096
 
-# create the ubuntu-data zvol.
-cli --command "storage dataset create name=\"tank/ubuntu-data\" type=VOLUME volsize=$volsize volblocksize=\"$volblocksize\""
-zfs get all tank/ubuntu-data
-
-# create the windows-data zvol.
-cli --command "storage dataset create name=\"tank/windows-data\" type=VOLUME volsize=$volsize volblocksize=\"$volblocksize\""
-zfs get all tank/windows-data
+# show zfs status.
+zpool status -v
 
 # show all datasets.
 cli --mode csv --command 'storage dataset query'
-
-
-#
-# configure the shares.
-
-# create the storage portal.
-cli --command "sharing iscsi portal create comment=storage listen=[{\"ip\":\"$ip_address\"}]"
-portal_id="$(cli --mode csv --command 'sharing iscsi portal query' | perl -ne '/^(\d+),\d+,storage,/ && print $1')"
-
-# create the storage initiators group.
-# TODO implement using the cli.
-# see iscsi_initiator_create in the api docs.
-api \
-    --header 'Content-Type:application/json' \
-    --post-data "{\"comment\":\"storage\",\"initiators\":[]}" \
-    "http://$ip_address/api/v2.0/iscsi/initiator"
-initiator_id="$(api "http://$ip_address/api/v2.0/iscsi/initiator" | jq -r '.[] | select(.comment=="storage") | .id')"
-
-# share the ubuntu-data volume.
-# see iscsi_target_create in the api docs.
-cli --command "sharing iscsi target create name=\"ubuntu\" mode=ISCSI groups=[{\"portal\":$portal_id,\"initiator\":$initiator_id}] auth_networks=[\"$ip_address/24\"]"
-cli --command 'sharing iscsi extent create name="ubuntu-data" type=DISK disk="zvol/tank/ubuntu-data" blocksize=4096 rpm=SSD'
-target_id="$(cli --mode csv --command 'sharing iscsi target query' | perl -ne '/^(\d+),ubuntu,/ && print $1')"
-extent_id="$(cli --mode csv --command 'sharing iscsi extent query' | perl -ne '/^(\d+),ubuntu-data,/ && print $1')"
-# TODO implement using the cli.
-# see iscsi_targetextent_create in the api docs.
-api \
-    --header 'Content-Type:application/json' \
-    --post-data "{\"target\":$target_id,\"lunid\":1,\"extent\":$extent_id}" \
-    "http://$ip_address/api/v2.0/iscsi/targetextent"
-
-# share the windows-data volume.
-# see iscsi_target_create in the api docs.
-cli --command "sharing iscsi target create name=\"windows\" mode=ISCSI groups=[{\"portal\":$portal_id,\"initiator\":$initiator_id}] auth_networks=[\"$ip_address/24\"]"
-cli --command 'sharing iscsi extent create name="windows-data" type=DISK disk="zvol/tank/windows-data" blocksize=4096 rpm=SSD'
-target_id="$(cli --mode csv --command 'sharing iscsi target query' | perl -ne '/^(\d+),windows,/ && print $1')"
-extent_id="$(cli --mode csv --command 'sharing iscsi extent query' | perl -ne '/^(\d+),windows-data,/ && print $1')"
-# TODO implement using the cli.
-# see iscsi_targetextent_create in the api docs.
-api \
-    --header 'Content-Type:application/json' \
-    --post-data "{\"target\":$target_id,\"lunid\":1,\"extent\":$extent_id}" \
-    "http://$ip_address/api/v2.0/iscsi/targetextent"
 
 # enable and start the iscsitarget service.
 cli --command 'service update id_or_name=iscsitarget enable=true'

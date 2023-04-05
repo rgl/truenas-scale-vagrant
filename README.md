@@ -10,15 +10,15 @@ This also includes an example environment with:
     * `tank/windows-data` zvol dataset.
     * `tank/k3s/v/pvc-` prefixed zvol datasets.
     * `ubuntu` iSCSI target share.
-        * LUN 1: `tank/ubuntu-data` dataset.
+        * LUN 0: `tank/ubuntu-data` dataset.
     * `windows` iSCSI target share.
-        * LUN 1: `tank/windows-data` dataset.
+        * LUN 0: `tank/windows-data` dataset.
     * `csi-k3s-pvc-` prefixed iSCSI target shares.
         * LUN 0: `tank/k3s/v/pvc-` prefixed dataset for a Kubernetes PVC.
 * Ubuntu client.
-    * `ubuntu-data` iSCSI LUN 1 initialized and mounted at `/mnt/ubuntu-data`.
+    * `ubuntu-data` iSCSI LUN 0 initialized and mounted at `/mnt/ubuntu-data`.
 * Windows client.
-    * `windows-data` iSCSI LUN 1 initialized and mounted at `D:`.
+    * `windows-data` iSCSI LUN 0 initialized and mounted at `D:`.
 * Kubernetes client.
     * iSCSI LUN initialized and mounted for a Kubernetes Persistent Volume Claims (PVC).
 
