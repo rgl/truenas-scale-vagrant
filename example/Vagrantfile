@@ -6,13 +6,15 @@ ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 # NB this is needed to modify the vSphere VMs.
 ENV['VAGRANT_EXPERIMENTAL'] = 'typed_triggers'
 
-CONFIG_TRUENAS_IP_ADDRESS         = '10.10.0.2'
-CONFIG_PIXIE_IP_ADDRESS           = '10.10.0.3'
-CONFIG_UBUNTU_IP_ADDRESS          = '10.10.0.10'
-CONFIG_K3S_IP_ADDRESS             = '10.10.0.11'
-CONFIG_WINDOWS_IP_ADDRESS         = '10.10.0.12'
-CONFIG_OPENSUSE_BOOT_IP_ADDRESS   = '10.10.0.20'
-CONFIG_OPENSUSE_BOOT_MAC_ADDRESS  = '08:00:27:00:00:20'
+CONFIG_TRUENAS_IP_ADDRESS           = '10.10.0.2'
+CONFIG_PIXIE_IP_ADDRESS             = '10.10.0.3'
+CONFIG_UBUNTU_IP_ADDRESS            = '10.10.0.10'
+CONFIG_K3S_IP_ADDRESS               = '10.10.0.11'
+CONFIG_WINDOWS_IP_ADDRESS           = '10.10.0.12'
+CONFIG_DEBIAN_LIVE_BOOT_IP_ADDRESS  = '10.10.0.20'
+CONFIG_DEBIAN_LIVE_BOOT_MAC_ADDRESS = '08:00:27:00:00:20'
+CONFIG_OPENSUSE_BOOT_IP_ADDRESS     = '10.10.0.21'
+CONFIG_OPENSUSE_BOOT_MAC_ADDRESS    = '08:00:27:00:00:21'
 
 CONFIG_STORAGE_DISKS        = ['sdb', 'sdc', 'sdd']
 CONFIG_STORAGE_DISK_SIZE_GB = 32
@@ -74,6 +76,21 @@ Vagrant.configure(2) do |config|
       CONFIG_STORAGE_DISKS.each do |disk_name| 
         lv.storage :file, :size => "#{CONFIG_STORAGE_DISK_SIZE_GB}G", :bus => 'scsi', :discard => 'unmap', :cache => 'unsafe'
       end
+      config.vm.synced_folder '.', '/vagrant', type: 'nfs', nfs_version: '4.2', nfs_udp: false
+      config.trigger.before :up do |trigger|
+        trigger.run = {
+          inline: <<~EOF
+          sh -euc '
+          src=../../debian-live-builder-vagrant/live-image-amd64.hybrid.iso
+          dst=tmp/debian-live-builder-vagrant/
+          if [ -e $src ]; then
+            install -d $dst
+            rsync $src $dst
+          fi
+          '
+          EOF
+        }
+      end
     end
     config.vm.provider 'vsphere' do |vsphere, config|
       vsphere.memory_mb = 8*1024
@@ -118,6 +135,22 @@ Vagrant.configure(2) do |config|
     config.vm.network :private_network, ip: CONFIG_PIXIE_IP_ADDRESS, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
     config.vm.provision 'shell', path: 'provision-common.sh', args: [CONFIG_PIXIE_IP_ADDRESS, CONFIG_STORAGE_MTU]
     config.vm.provision 'shell', path: 'provision-pixie.sh', args: [CONFIG_PIXIE_IP_ADDRESS, CONFIG_TRUENAS_IP_ADDRESS, CONFIG_STORAGE_MTU]
+  end
+
+  config.vm.define :debian_live_boot do |config|
+    config.vm.box = nil
+    config.vm.provider 'libvirt' do |lv, config|
+      lv.memory = 2*1024
+      lv.cpus = 2
+      lv.machine_type = 'q35'
+      lv.random :model => 'random'
+      lv.graphics_type = 'spice'
+      lv.video_type = 'qxl'
+      lv.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
+      lv.channel :type => 'spicevmc', :target_name => 'com.redhat.spice.0', :target_type => 'virtio'
+      lv.boot 'network'
+    end
+    config.vm.network :private_network, mac: CONFIG_DEBIAN_LIVE_BOOT_MAC_ADDRESS, ip: CONFIG_DEBIAN_LIVE_BOOT_IP_ADDRESS, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
   end
 
   config.vm.define :opensuse_boot do |config|

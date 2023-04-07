@@ -8,24 +8,29 @@ This also includes an example environment with:
     * `tank` storage pool.
     * `tank/ubuntu-data` zvol dataset.
     * `tank/windows-data` zvol dataset.
+    * `tank/debian-live-boot` zvol dataset.
     * `tank/opensuse-boot` zvol dataset.
     * `tank/k3s/v/pvc-` prefixed zvol datasets.
     * `ubuntu` iSCSI target share.
         * LUN 0: `tank/ubuntu-data` dataset.
     * `windows` iSCSI target share.
         * LUN 0: `tank/windows-data` dataset.
+    * `debian-live-boot` iSCSI target read-only share.
+        * LUN 0: `tank/debian-live-boot` dataset.
     * `opensuse-boot` iSCSI target share.
         * LUN 0: `tank/opensuse-boot` dataset.
     * `csi-k3s-pvc-` prefixed iSCSI target shares.
         * LUN 0: `tank/k3s/v/pvc-` prefixed dataset for a Kubernetes PVC.
 * Ubuntu client.
     * `ubuntu-data` iSCSI LUN 0 initialized and mounted at `/mnt/ubuntu-data`.
+* Kubernetes and Ubuntu client.
+    * iSCSI LUN initialized and mounted for a Kubernetes Persistent Volume Claims (PVC).
 * Windows client.
     * `windows-data` iSCSI LUN 0 initialized and mounted at `D:`.
+* iPXE and Debian live client.
+    * `debian-live-boot` iSCSI LUN 0 used as the boot disk.
 * iPXE and openSUSE client.
     * `opensuse-boot` iSCSI LUN 0 used as the boot disk.
-* Kubernetes client.
-    * iSCSI LUN initialized and mounted for a Kubernetes Persistent Volume Claims (PVC).
 
 # Usage
 
@@ -100,7 +105,13 @@ pushd example
 time vagrant up --provider=libvirt --no-destroy-on-error --no-tty truenas pixie
 ```
 
-Then, depending in what you want to try, follow the next sections.
+Depending on what you want to try next, follow the sections:
+
+* [ubuntu](#ubuntu)
+* [k3s](#k3s)
+* [windows](#windows)
+* [debian_live_boot](#debian_live_boot)
+* [opensuse_boot](#opensuse_boot)
 
 ### ubuntu
 
@@ -126,7 +137,15 @@ Start:
 time vagrant up --provider=libvirt --no-destroy-on-error --no-tty windows
 ```
 
-### opensuse_boot example
+### debian_live_boot
+
+Start:
+
+```bash
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty debian_live_boot
+```
+
+### opensuse_boot
 
 Start:
 

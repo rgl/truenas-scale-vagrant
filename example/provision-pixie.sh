@@ -19,8 +19,17 @@ cat >/var/pixie/boot.ipxe <<EOF
 #!ipxe
 chain --autofree --replace boot-\${mac:hexraw}.ipxe
 EOF
-# set the opensuse-boot machine boot script.
+# set the debian-live-boot machine boot script.
 cat >/var/pixie/boot-080027000020.ipxe <<EOF
+#!ipxe
+set initiator-iqn iqn.2010-04.org.ipxe:\${mac:hexraw}
+set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:debian-live-boot
+echo iSCSI initiator:   \${initiator-iqn}
+echo iSCSI target_boot: \${target_boot}
+sanboot \${target_boot}
+EOF
+# set the opensuse-boot machine boot script.
+cat >/var/pixie/boot-080027000021.ipxe <<EOF
 #!ipxe
 set initiator-iqn iqn.2010-04.org.ipxe:\${mac:hexraw}
 set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:opensuse-boot
@@ -117,6 +126,7 @@ dhcp-ignore=tag:!known # ignore hosts that do not match a dhcp-host line.
 
 # machines.
 # TODO get mac and ip from variable.
-dhcp-host=08:00:27:00:00:20,10.10.0.20,opensuse
+dhcp-host=08:00:27:00:00:20,10.10.0.20,debian-live
+dhcp-host=08:00:27:00:00:21,10.10.0.21,opensuse
 EOF
 systemctl restart dnsmasq

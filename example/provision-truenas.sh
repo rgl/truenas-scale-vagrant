@@ -42,6 +42,29 @@ function create-volume {
         "http://$ip_address/api/v2.0/iscsi/targetextent"
 }
 
+function create-volume-from-path {
+    local name="$1"
+    local img_path="$2"
+    local shareblocksize="${3:-512}" # NB iPXE/BIOS/int13 can only read 512-byte blocks.
+    local ro="${4:-false}"
+    volsize=$(qemu-img info "$img_path" | perl -ne '/^virtual size: .+ \((\d+) bytes\)/ && print $1')
+    create-volume "$name" "$volsize" "$shareblocksize" "$ro"
+    qemu-img convert -O raw "$img_path" "/dev/tank/$name"
+    fdisk -l "/dev/tank/$name"
+}
+
+function create-volume-from-url {
+    local name="$1"
+    local img_url="$2"
+    local shareblocksize="${3:-512}" # NB iPXE/BIOS/int13 can only read 512-byte blocks.
+    local ro="${4:-false}"
+    local img_path="$(basename "$img_url")"
+    wget -qO "$img_path" "$img_url"
+    create-volume-from-path "$name" "$img_path" "$shareblocksize" "$ro"
+    rm "$img_path"
+}
+
+
 #
 # wait for the system to be ready.
 
@@ -98,6 +121,11 @@ cli --mode csv --command 'storage pool query'
 # create local zfs volumes and share them as iscsi volumes.
 create-volume ubuntu-data $((1*GiB)) 4096
 create-volume windows-data $((1*GiB)) 4096
+if [ -r /vagrant/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso ]; then
+    create-volume-from-path debian-live-boot /vagrant/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso 512 true
+else
+    create-volume-from-url debian-live-boot https://github.com/rgl/debian-live-builder-vagrant/releases/download/v20230407/debian-live-20230407-amd64.iso 512 true
+fi
 create-volume opensuse-boot $((16*GiB)) 512
 
 # show zfs status.
