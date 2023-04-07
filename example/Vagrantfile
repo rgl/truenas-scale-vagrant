@@ -170,6 +170,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :ubuntu do |config|
+    config.vm.hostname = 'ubuntu'
     config.vm.box = 'ubuntu-22.04-amd64'
     # config.vm.box = 'ubuntu-22.04-uefi-amd64'
     config.vm.provider 'libvirt' do |lv, config|
@@ -188,6 +189,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :k3s do |config|
+    config.vm.hostname = 'k3s'
     config.vm.box = 'ubuntu-22.04-amd64'
     # config.vm.box = 'ubuntu-22.04-uefi-amd64'
     config.vm.provider 'libvirt' do |lv, config|
@@ -206,6 +208,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :windows do |config|
+    config.vm.hostname = 'windows'
     config.vm.box = 'windows-2022-amd64'
     # config.vm.box = 'windows-2022-uefi-amd64'
     config.vm.provider 'libvirt' do |lv, config|
