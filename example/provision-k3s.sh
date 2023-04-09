@@ -3,12 +3,12 @@ set -euxo pipefail
 
 ip_address="${1:-10.10.0.11}"
 truenas_ip_address="${2:-10.10.0.2}"
-k3s_version="${3:-v1.26.2+k3s1}"
+k3s_version="${3:-v1.26.3+k3s1}"
 k9s_version="${4:-v0.27.3}"
 helm_version="${5:-v3.11.2}"
-democratic_csi_chart_version="${6:-0.13.5}"
-democratic_csi_tag="${7:-v1.8.1}"
-gitea_chart_version="${8:-7.0.4}"
+democratic_csi_chart_version="${6:-0.13.6}"
+democratic_csi_tag="${7:-v1.8.3}"
+gitea_chart_version="${8:-8.0.2}"
 gitea_version="${9:-1.19.0}"
 fqdn="$(hostname --fqdn)"
 k3s_fqdn="s.$(hostname --domain)"
@@ -51,7 +51,7 @@ rm helm
 helm completion bash >/usr/share/bash-completion/completions/helm
 
 # install k3s.
-# see server arguments at e.g. https://github.com/k3s-io/k3s/blob/v1.26.2+k3s1/pkg/cli/cmds/server.go#L543-L551
+# see server arguments at e.g. https://github.com/k3s-io/k3s/blob/v1.26.3+k3s1/pkg/cli/cmds/server.go#L549-L557
 # or run k3s server --help
 # see https://docs.k3s.io/installation/configuration
 # see https://docs.k3s.io/reference/server-config
@@ -81,7 +81,7 @@ install -m 700 -d ~/.kube
 ln -s /etc/rancher/k3s/k3s.yaml ~/.kube/config
 
 # wait for this node to be Ready.
-# e.g. s1     Ready    control-plane,master   3m    v1.26.2+k3s1
+# e.g. s1     Ready    control-plane,master   3m    v1.26.3+k3s1
 $SHELL -c 'node_name=$(hostname); echo "waiting for node $node_name to be ready..."; while [ -z "$(kubectl get nodes $node_name | grep -E "$node_name\s+Ready\s+")" ]; do sleep 3; done; echo "node ready!"'
 
 # wait for the kube-dns pod to be Running.
