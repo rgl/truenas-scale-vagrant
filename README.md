@@ -75,6 +75,12 @@ api system/general | jq
 api disk | jq
 api pool | jq
 api pool/dataset | jq
+api sharing/smb | jq
+api iscsi/portal | jq
+api iscsi/target | jq
+api iscsi/extent | jq
+api iscsi/targetextent | jq
+api iscsi/global/sessions | jq
 ```
 
 Access the gitea example kubernetes application (which uses iSCSI persistent
