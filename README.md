@@ -143,6 +143,26 @@ Start:
 time vagrant up --provider=libvirt --no-destroy-on-error --no-tty k3s
 ```
 
+Enter the `k3s` VM:
+
+```bash
+vagrant ssh k3s
+sudo -i
+```
+
+List all the active iSCSI sessions:
+
+```bash
+iscsiadm -m session
+```
+
+List all the Kubernetes Persistent Volume Claim (PVC) and Persistent Volume (PV) objects:
+
+```bash
+kubectl get pvc -A
+kubectl get pv -A
+```
+
 ### windows
 
 Start:
