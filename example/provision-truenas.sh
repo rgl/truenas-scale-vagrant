@@ -8,6 +8,10 @@ KiB=$((1024))
 MiB=$((1024*KiB))
 GiB=$((1024*MiB))
 
+function mround {
+    echo $((($1+$2-1)/$2*$2))
+}
+
 function api {
     # see http://10.10.0.2/api/docs/#restful
     # NB to use an api key, replace --user, --password and --auth-no-challenge,
@@ -16,10 +20,21 @@ function api {
     wget -qO- --user root --password root --auth-no-challenge "$@"
 }
 
+# create an local zfs volume and share it as an smb volume.
+function create-smb-volume {
+    local name="$1"
+    # create the zfs volume.
+    cli --command "storage dataset create name=\"tank/$name\" type=FILESYSTEM"
+    zfs get all "tank/$name"
+    # share the zfs volume.
+    # see cli --command 'sharing smb query'
+    cli --command "sharing smb create name=\"$name\" path=\"/mnt/tank/$name\" purpose=READ_ONLY ro=true"
+}
+
 # create an local zfs volume and share it as an iscsi volume at lun 0.
 function create-volume {
     local name="$1"
-    local volsize="$2"
+    local volsize="$(mround $2 $((16*1024)))"
     local volblocksize='16K' # NB for some odd readon, this is not a decimal like volsize (or both are not strings).
     local shareblocksize="${3:-512}" # NB iPXE/BIOS/int13 can only read 512-byte blocks.
     local ro="${4:-false}"
@@ -95,6 +110,26 @@ cli --command 'network interface query'
 
 
 #
+# create users.
+
+cli --command 'account user create uid=3000 username=vagrant password=vagrant full_name=vagrant group_create=true shell="/usr/sbin/nologin"'
+
+
+#
+# enable and start the cifs/samba/smb service.
+
+cli --command 'service update id_or_name=cifs enable=true'
+cli --command 'service start service=cifs'
+
+
+#
+# enable and start the iscsitarget service.
+
+cli --command 'service update id_or_name=iscsitarget enable=true'
+cli --command 'service start service=iscsitarget'
+
+
+#
 # configure the storage,
 
 # create the iscsi storage portal.
@@ -118,6 +153,15 @@ pool_topology='{
 cli --command "storage pool create name=tank topology=$pool_topology"
 cli --mode csv --command 'storage pool query'
 
+# create local zfs volumes and share them as smb volumes.
+create-smb-volume sw
+if [ -r /vagrant/windows-2022-amd64.iso ]; then
+    cp /vagrant/windows-2022-amd64.iso /mnt/tank/sw/
+fi
+if [ -r /vagrant/virtio-win-0.1.229.iso ]; then
+    cp /vagrant/virtio-win-0.1.229.iso /mnt/tank/sw/
+fi
+
 # create local zfs volumes and share them as iscsi volumes.
 create-volume ubuntu-data $((1*GiB)) 4096
 create-volume windows-data $((1*GiB)) 4096
@@ -127,13 +171,10 @@ else
     create-volume-from-url debian-live-boot https://github.com/rgl/debian-live-builder-vagrant/releases/download/v20230407/debian-live-20230407-amd64.iso 512 true
 fi
 create-volume opensuse-boot $((16*GiB)) 512
+create-volume windows-boot $((32*GiB)) 512
 
 # show zfs status.
 zpool status -v
 
 # show all datasets.
 cli --mode csv --command 'storage dataset query'
-
-# enable and start the iscsitarget service.
-cli --command 'service update id_or_name=iscsitarget enable=true'
-cli --command 'service start service=iscsitarget'

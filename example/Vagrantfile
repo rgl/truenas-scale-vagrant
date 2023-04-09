@@ -15,9 +15,11 @@ CONFIG_DEBIAN_LIVE_BOOT_IP_ADDRESS  = '10.10.0.20'
 CONFIG_DEBIAN_LIVE_BOOT_MAC_ADDRESS = '08:00:27:00:00:20'
 CONFIG_OPENSUSE_BOOT_IP_ADDRESS     = '10.10.0.21'
 CONFIG_OPENSUSE_BOOT_MAC_ADDRESS    = '08:00:27:00:00:21'
+CONFIG_WINDOWS_BOOT_IP_ADDRESS      = '10.10.0.22'
+CONFIG_WINDOWS_BOOT_MAC_ADDRESS     = '08:00:27:00:00:22'
 
 CONFIG_STORAGE_DISKS        = ['sdb', 'sdc', 'sdd']
-CONFIG_STORAGE_DISK_SIZE_GB = 32
+CONFIG_STORAGE_DISK_SIZE_GB = 64
 CONFIG_STORAGE_MTU          = 9000
 
 require 'open3'
@@ -73,7 +75,7 @@ Vagrant.configure(2) do |config|
       lv.memory = 8*1024
       lv.cpus = 2
       # add the storage disks.
-      CONFIG_STORAGE_DISKS.each do |disk_name| 
+      CONFIG_STORAGE_DISKS.each do |disk_name|
         lv.storage :file, :size => "#{CONFIG_STORAGE_DISK_SIZE_GB}G", :bus => 'scsi', :discard => 'unmap', :cache => 'unsafe'
       end
       config.vm.synced_folder '.', '/vagrant', type: 'nfs', nfs_version: '4.2', nfs_udp: false
@@ -81,12 +83,14 @@ Vagrant.configure(2) do |config|
         trigger.run = {
           inline: <<~EOF
           sh -euc '
-          src=../../debian-live-builder-vagrant/live-image-amd64.hybrid.iso
-          dst=tmp/debian-live-builder-vagrant/
-          if [ -e $src ]; then
-            install -d $dst
-            rsync $src $dst
-          fi
+          copy() {
+            if [ -e $1 ]; then
+              install -d $2
+              rsync $1 $2
+            fi
+          }
+          copy ../../debian-live-builder-vagrant/live-image-amd64.hybrid.iso tmp/debian-live-builder-vagrant/
+          copy ../../windows-pe-vagrant/tmp/winpe-amd64.iso tmp/windows-pe-vagrant/
           '
           EOF
         }
@@ -100,7 +104,7 @@ Vagrant.configure(2) do |config|
       config.trigger.after :'VagrantPlugins::VSphere::Action::Clone', type: :action do |trigger|
         trigger.ruby do |env, machine|
           # add the storage disks.
-          CONFIG_STORAGE_DISKS.each do |disk_name| 
+          CONFIG_STORAGE_DISKS.each do |disk_name|
             stdout, stderr, status = Open3.capture3(
               'bash',
               'provision-vsphere-disk.sh',
@@ -125,6 +129,7 @@ Vagrant.configure(2) do |config|
     config.vm.provider 'libvirt' do |lv, config|
       lv.memory = 1*1024
       lv.cpus = 2
+      config.vm.synced_folder '.', '/vagrant', type: 'nfs', nfs_version: '4.2', nfs_udp: false
     end
     config.vm.provider 'vsphere' do |vsphere, config|
       vsphere.memory_mb = 1*1024
@@ -167,6 +172,22 @@ Vagrant.configure(2) do |config|
       lv.storage :file, :device => :cdrom, :bus => 'scsi', :path => "#{File.dirname(__FILE__)}/openSUSE-Leap-15.4-NET-x86_64-Media.iso"
     end
     config.vm.network :private_network, mac: CONFIG_OPENSUSE_BOOT_MAC_ADDRESS, ip: CONFIG_OPENSUSE_BOOT_IP_ADDRESS, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
+  end
+
+  config.vm.define :windows_boot do |config|
+    config.vm.box = nil
+    config.vm.provider 'libvirt' do |lv, config|
+      lv.memory = 2*1024
+      lv.cpus = 2
+      lv.machine_type = 'q35'
+      lv.random :model => 'random'
+      lv.graphics_type = 'spice'
+      lv.video_type = 'qxl'
+      lv.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
+      lv.channel :type => 'spicevmc', :target_name => 'com.redhat.spice.0', :target_type => 'virtio'
+      lv.boot 'network'
+    end
+    config.vm.network :private_network, mac: CONFIG_WINDOWS_BOOT_MAC_ADDRESS, ip: CONFIG_WINDOWS_BOOT_IP_ADDRESS, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
   end
 
   config.vm.define :ubuntu do |config|

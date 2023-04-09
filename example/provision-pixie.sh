@@ -12,6 +12,38 @@ storage_interface="${interfaces[1]}"
 
 
 #
+# mount the windows-pe iso.
+
+install -d /var/pixie/windows-pe-iso
+if [ -e /vagrant/tmp/windows-pe-vagrant/winpe-amd64.iso ]; then
+  iso_path='/vagrant/tmp/windows-pe-vagrant/winpe-amd64.iso'
+else
+  iso_url='https://github.com/rgl/windows-pe-vagrant/releases/download/v20230409/windows-pe-20230409-amd64.iso'
+  iso_path="/vagrant/$(basename "$iso_url")"
+  if [ ! -e "$iso_path" ]; then
+    wget -qO "$iso_path" "$iso_url"
+  fi
+fi
+echo "$iso_path /var/pixie/windows-pe-iso udf ro 0 0" >>/etc/fstab
+mount -a
+
+
+#
+# get wimboot.
+# see http://ipxe.org/wimboot
+
+wimboot_url='https://github.com/ipxe/wimboot/releases/download/v2.7.5/wimboot'
+wimboot_sha='7083f2ea6bb8f7f0801d52d38e6ba25d6e46b0e5b2fb668e65dd0720bf33f7bd'
+wimboot_path='/var/pixie/wimboot'
+install -d "$(dirname "$wimboot_path")"
+wget -qO "$wimboot_path" "$wimboot_url"
+if [ "$(sha256sum "$wimboot_path" | awk '{print $1}')" != "$wimboot_sha" ]; then
+  echo "downloaded $wimboot_url failed the checksum verification"
+  exit 1
+fi
+
+
+#
 # provision the pixie assets.
 
 install -d /var/pixie
@@ -36,6 +68,22 @@ set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:op
 echo iSCSI initiator:   \${initiator-iqn}
 echo iSCSI target_boot: \${target_boot}
 sanboot \${target_boot}
+EOF
+# set the windows-boot machine boot script.
+cat >/var/pixie/boot-080027000022.ipxe <<EOF
+#!ipxe
+set initiator-iqn iqn.2010-04.org.ipxe:\${mac:hexraw}
+set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:windows-boot
+echo iSCSI initiator:   \${initiator-iqn}
+echo iSCSI target_boot: \${target_boot}
+#sanboot \${target_boot}
+# TODO why setting sanhook makes windows stay at the loading screen for about 2m?
+sanhook \${target_boot}
+kernel wimboot
+initrd windows-pe-iso/Boot/BCD BCD
+initrd windows-pe-iso/Boot/boot.sdi boot.sdi
+initrd windows-pe-iso/sources/boot.wim boot.wim
+boot
 EOF
 
 
@@ -121,12 +169,14 @@ interface=eth1
 #dhcp-option=option:ntp-server,$ip_address
 # TODO why returning the mtu borks ipxe?
 #dhcp-option=tag:eth1,option:mtu,$mtu
+dhcp-option=tag:eth1,option:router # do not send the router/gateway option.
 dhcp-range=tag:eth1,$dhcp_range
 dhcp-ignore=tag:!known # ignore hosts that do not match a dhcp-host line.
 
 # machines.
 # TODO get mac and ip from variable.
-dhcp-host=08:00:27:00:00:20,10.10.0.20,debian-live
-dhcp-host=08:00:27:00:00:21,10.10.0.21,opensuse
+dhcp-host=08:00:27:00:00:20,10.10.0.20,debian-live-boot
+dhcp-host=08:00:27:00:00:21,10.10.0.21,opensuse-boot
+dhcp-host=08:00:27:00:00:22,10.10.0.22,windows-boot
 EOF
 systemctl restart dnsmasq

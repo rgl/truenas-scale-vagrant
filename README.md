@@ -6,11 +6,15 @@ This also includes an example environment with:
 
 * TrueNAS SCALE server.
     * `tank` storage pool.
+    * `tank/sw` filesystem dataset.
     * `tank/ubuntu-data` zvol dataset.
     * `tank/windows-data` zvol dataset.
     * `tank/debian-live-boot` zvol dataset.
     * `tank/opensuse-boot` zvol dataset.
+    * `tank/windows-boot` zvol dataset.
     * `tank/k3s/v/pvc-` prefixed zvol datasets.
+    * `sw` SMB share.
+        * `tank/sw` dataset.
     * `ubuntu` iSCSI target share.
         * LUN 0: `tank/ubuntu-data` dataset.
     * `windows` iSCSI target share.
@@ -19,6 +23,8 @@ This also includes an example environment with:
         * LUN 0: `tank/debian-live-boot` dataset.
     * `opensuse-boot` iSCSI target share.
         * LUN 0: `tank/opensuse-boot` dataset.
+    * `windows-boot` iSCSI target share.
+        * LUN 0: `tank/windows-boot` dataset.
     * `csi-k3s-pvc-` prefixed iSCSI target shares.
         * LUN 0: `tank/k3s/v/pvc-` prefixed dataset for a Kubernetes PVC.
 * Ubuntu client.
@@ -31,6 +37,8 @@ This also includes an example environment with:
     * `debian-live-boot` iSCSI LUN 0 used as the boot disk.
 * iPXE and openSUSE client.
     * `opensuse-boot` iSCSI LUN 0 used as the boot disk.
+* iPXE and Windows client.
+    * `windows-boot` iSCSI LUN 0 used as the boot disk.
 
 # Usage
 
@@ -95,6 +103,11 @@ Download the example ISOs:
 pushd example
 wget -O openSUSE-Leap-15.4-NET-x86_64-Media.iso \
     https://download.opensuse.org/distribution/leap/15.4/iso/openSUSE-Leap-15.4-NET-x86_64-Media.iso
+# see https://github.com/rgl/windows-evaluation-isos-scraper/blob/main/data/windows-2022.json
+wget -O windows-2022-amd64.iso \
+    https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x64FRE_en-us.iso
+wget -O virtio-win-0.1.229.iso \
+    https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.229-1/virtio-win-0.1.229.iso
 popd
 ```
 
@@ -112,6 +125,7 @@ Depending on what you want to try next, follow the sections:
 * [windows](#windows)
 * [debian_live_boot](#debian_live_boot)
 * [opensuse_boot](#opensuse_boot)
+* [windows_boot](#windows_boot)
 
 ### ubuntu
 
@@ -336,6 +350,68 @@ tmpfs           4.0M     0  4.0M   0% /sys/fs/cgroup
 /dev/sda2        16G  1.9G   14G  13% /usr/local
 /dev/sda2        16G  1.9G   14G  13% /var
 tmpfs           197M     0  197M   0% /run/user/1000
+```
+
+### windows_boot
+
+Start:
+
+```bash
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty windows_boot
+```
+
+Open the VM console.
+
+Focus the PowerShell window.
+
+Show iSCSI information:
+
+```powershell
+netsh interface ipv4 show interfaces
+iscsicli ReportTargetMappings
+Get-Disk | Where-Object { $_.BusType -eq 'iSCSI' }
+Get-IscsiSession
+```
+
+Mount the Windows Setup ISO:
+
+```powershell
+net use s: \\10.10.0.2\sw vagrant /user:vagrant
+Mount-DiskImage s:\windows-2022-amd64.iso
+```
+
+Start the Windows Setup:
+
+```powershell
+d:\setup.exe /noreboot
+```
+
+Proceed with the installation until you come back to the powershell prompt.
+
+Login into the `pixie` VM and reconfigure the windows-boot iPXE settings:
+
+```bash
+vagrant ssh pixie
+sudo -i
+vim /var/pixie/boot-080027000022.ipxe
+# uncomment the sanboot ${target_boot} line,
+# and comment everything after it.
+```
+
+In the windows_boot VM, reboot the machine:
+
+```powershell
+wpeutil reboot
+```
+
+Windows should now boot from the iSCSI disk.
+
+Login into Windows and install the guest tools:
+
+```powershell
+net use s: \\10.10.0.2\sw vagrant /user:vagrant
+Mount-DiskImage s:\virtio-win-0.1.229.iso
+d:\virtio-win-guest-tools.exe
 ```
 
 ## VMware vSphere usage
