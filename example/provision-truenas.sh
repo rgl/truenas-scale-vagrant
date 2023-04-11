@@ -170,6 +170,9 @@ if [ -r /vagrant/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso ]; 
 else
     create-volume-from-url debian-live-boot https://github.com/rgl/debian-live-builder-vagrant/releases/download/v20230407/debian-live-20230407-amd64.iso 512 true
 fi
+if [ -r /vagrant/tmp/ubuntu-vagrant/box.img ]; then
+    create-volume-from-path ubuntu-boot /vagrant/tmp/ubuntu-vagrant/box.img 512
+fi
 create-volume opensuse-boot $((16*GiB)) 512
 create-volume windows-boot $((32*GiB)) 512
 

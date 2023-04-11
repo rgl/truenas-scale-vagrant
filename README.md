@@ -10,6 +10,7 @@ This also includes an example environment with:
     * `tank/ubuntu-data` zvol dataset.
     * `tank/windows-data` zvol dataset.
     * `tank/debian-live-boot` zvol dataset.
+    * `tank/ubuntu-boot` zvol dataset.
     * `tank/opensuse-boot` zvol dataset.
     * `tank/windows-boot` zvol dataset.
     * `tank/k3s/v/pvc-` prefixed zvol datasets.
@@ -21,6 +22,8 @@ This also includes an example environment with:
         * LUN 0: `tank/windows-data` dataset.
     * `debian-live-boot` iSCSI target read-only share.
         * LUN 0: `tank/debian-live-boot` dataset.
+    * `ubuntu-boot` iSCSI target share.
+        * LUN 0: `tank/ubuntu-boot` dataset.
     * `opensuse-boot` iSCSI target share.
         * LUN 0: `tank/opensuse-boot` dataset.
     * `windows-boot` iSCSI target share.
@@ -35,6 +38,8 @@ This also includes an example environment with:
     * `windows-data` iSCSI LUN 0 initialized and mounted at `D:`.
 * iPXE and Debian live client.
     * `debian-live-boot` iSCSI LUN 0 used as the boot disk.
+* iPXE and Ubuntu client.
+    * `ubuntu-boot` iSCSI LUN 0 used as the boot disk.
 * iPXE and openSUSE client.
     * `opensuse-boot` iSCSI LUN 0 used as the boot disk.
 * iPXE and Windows client.
@@ -130,6 +135,7 @@ Depending on what you want to try next, follow the sections:
 * [k3s](#k3s)
 * [windows](#windows)
 * [debian_live_boot](#debian_live_boot)
+* [ubuntu_boot](#ubuntu_boot)
 * [opensuse_boot](#opensuse_boot)
 * [windows_boot](#windows_boot)
 
@@ -183,6 +189,118 @@ Start:
 
 ```bash
 time vagrant up --provider=libvirt --no-destroy-on-error --no-tty debian_live_boot
+```
+
+### ubuntu_boot
+
+Start:
+
+```bash
+time vagrant up --provider=libvirt --no-destroy-on-error --no-tty ubuntu_boot
+```
+
+Login into the VM:
+
+```bash
+vagrant ssh ubuntu_boot
+sudo -i
+```
+
+Dump the IP configuration:
+
+```bash
+ip addr
+```
+```
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 52:54:00:da:4c:51 brd ff:ff:ff:ff:ff:ff
+    altname enp5s0
+    inet 192.168.121.202/24 metric 100 brd 192.168.121.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:feda:4c51/64 scope link 
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,UP,LOWER_UP> mtu 9000 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 08:00:27:00:00:21 brd ff:ff:ff:ff:ff:ff
+    altname enp6s0
+    inet 10.10.0.21/24 brd 10.10.0.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a00:27ff:fe00:21/64 scope link 
+       valid_lft forever preferred_lft forever
+```
+
+Dump the iSCSI target from the iBFT:
+
+```bash
+cat /sys/firmware/ibft/target0/target-name
+```
+```
+iqn.2005-10.org.freenas.ctl:ubuntu-boot
+```
+
+Dump the iSCSI initiator name from the iBFT:
+
+```bash
+cat /sys/firmware/ibft/initiator/initiator-name
+```
+```
+iqn.2010-04.org.ipxe:080027000021
+```
+
+Dump the iSCSI initiator name from the iscsid configuration:
+
+```bash
+cat /etc/iscsi/initiatorname.iscsi
+```
+```
+InitiatorName=iqn.2004-10.com.ubuntu:01:1f309ecf3be
+```
+
+Show the open iSCSI sessions:
+
+```bash
+iscsiadm -m session         # show brief information.
+iscsiadm -m session -P 3    # show detailed information.
+```
+```
+tcp: [1] 10.10.0.2:3260,1 iqn.2005-10.org.freenas.ctl:ubuntu-boot (non-flash)
+```
+
+Show the detected partitions:
+
+```bash
+fdisk -l
+```
+```
+Disk /dev/sda: 8 GiB, 8589934592 bytes, 16777216 sectors
+Disk model: iSCSI Disk      
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 16384 bytes
+I/O size (minimum/optimal): 16384 bytes / 16384 bytes
+Disklabel type: dos
+Disk identifier: 0x9d200a48
+
+Device     Boot Start      End  Sectors Size Id Type
+/dev/sda1        2048 16777215 16775168   8G 83 Linux
+```
+
+Show the free space:
+
+```bash
+df -h
+```
+```
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs           198M  1.1M  197M   1% /run
+/dev/sda1       7.8G  4.3G  3.2G  58% /
+tmpfs           988M     0  988M   0% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+tmpfs           198M  4.0K  198M   1% /run/user/1000
 ```
 
 ### opensuse_boot
@@ -419,7 +537,7 @@ Login into the `pixie` VM and reconfigure the windows-boot iPXE settings:
 ```bash
 vagrant ssh pixie
 sudo -i
-vim /var/pixie/boot-080027000022.ipxe
+vim /var/pixie/boot-080027000023.ipxe
 # uncomment the sanboot ${target_boot} line,
 # and comment everything after it.
 ```
