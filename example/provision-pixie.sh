@@ -60,8 +60,17 @@ echo iSCSI initiator:   \${initiator-iqn}
 echo iSCSI target_boot: \${target_boot}
 sanboot \${target_boot}
 EOF
-# set the ubuntu-boot machine boot script.
+# set the debian-boot machine boot script.
 cat >/var/pixie/boot-080027000021.ipxe <<EOF
+#!ipxe
+set initiator-iqn iqn.2010-04.org.ipxe:\${mac:hexraw}
+set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:debian-boot
+echo iSCSI initiator:   \${initiator-iqn}
+echo iSCSI target_boot: \${target_boot}
+sanboot \${target_boot}
+EOF
+# set the ubuntu-boot machine boot script.
+cat >/var/pixie/boot-080027000022.ipxe <<EOF
 #!ipxe
 set initiator-iqn iqn.2010-04.org.ipxe:\${mac:hexraw}
 set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:ubuntu-boot
@@ -70,7 +79,7 @@ echo iSCSI target_boot: \${target_boot}
 sanboot \${target_boot}
 EOF
 # set the opensuse-boot machine boot script.
-cat >/var/pixie/boot-080027000022.ipxe <<EOF
+cat >/var/pixie/boot-080027000023.ipxe <<EOF
 #!ipxe
 set initiator-iqn iqn.2010-04.org.ipxe:\${mac:hexraw}
 set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:opensuse-boot
@@ -79,7 +88,7 @@ echo iSCSI target_boot: \${target_boot}
 sanboot \${target_boot}
 EOF
 # set the windows-boot machine boot script.
-cat >/var/pixie/boot-080027000023.ipxe <<EOF
+cat >/var/pixie/boot-080027000024.ipxe <<EOF
 #!ipxe
 set initiator-iqn iqn.2010-04.org.ipxe:\${mac:hexraw}
 set target_boot iscsi:$iscsi_portal_ip_address::::iqn.2005-10.org.freenas.ctl:windows-boot
@@ -185,8 +194,9 @@ dhcp-ignore=tag:!known # ignore hosts that do not match a dhcp-host line.
 # machines.
 # TODO get mac and ip from variable.
 dhcp-host=08:00:27:00:00:20,10.10.0.20,debian-live-boot
-dhcp-host=08:00:27:00:00:21,10.10.0.21,ubuntu-boot
-dhcp-host=08:00:27:00:00:22,10.10.0.22,opensuse-boot
-dhcp-host=08:00:27:00:00:23,10.10.0.23,windows-boot
+dhcp-host=08:00:27:00:00:21,10.10.0.21,debian-boot
+dhcp-host=08:00:27:00:00:22,10.10.0.22,ubuntu-boot
+dhcp-host=08:00:27:00:00:23,10.10.0.23,opensuse-boot
+dhcp-host=08:00:27:00:00:24,10.10.0.24,windows-boot
 EOF
 systemctl restart dnsmasq
