@@ -168,11 +168,10 @@ List all the active iSCSI sessions:
 iscsiadm -m session
 ```
 
-List all the Kubernetes Persistent Volume Claim (PVC) and Persistent Volume (PV) objects:
+List all the Kubernetes Storage Class (SC), Persistent Volume Claim (PVC) and Persistent Volume (PV) objects:
 
 ```bash
-kubectl get pvc -A
-kubectl get pv -A
+kubectl get sc,pvc,pv -A
 ```
 
 ### windows
