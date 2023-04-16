@@ -3,13 +3,13 @@ set -euxo pipefail
 
 ip_address="${1:-10.10.0.11}"
 truenas_ip_address="${2:-10.10.0.2}"
-k3s_version="${3:-v1.26.3+k3s1}"
-k9s_version="${4:-v0.27.3}"
-helm_version="${5:-v3.11.2}"
-democratic_csi_chart_version="${6:-0.13.6}"
-democratic_csi_tag="${7:-v1.8.3}"
-gitea_chart_version="${8:-8.0.2}"
-gitea_version="${9:-1.19.0}"
+k3s_version="${3:-v1.26.3+k3s1}" # see https://github.com/k3s-io/k3s/releases
+k9s_version="${4:-v0.27.3}" # see https://github.com/derailed/k9s/releases
+helm_version="${5:-v3.11.3}" # see https://github.com/helm/helm/releases
+democratic_csi_chart_version="${6:-0.13.7}" # see https://github.com/democratic-csi/charts/releases
+democratic_csi_tag="${7:-v1.8.3}" # see https://github.com/democratic-csi/democratic-csi/tags
+gitea_chart_version="${8:-8.1.0}" # see https://gitea.com/gitea/helm-chart/tags
+gitea_version="${9:-1.19.1}" # see https://github.com/go-gitea/gitea
 fqdn="$(hostname --fqdn)"
 k3s_fqdn="s.$(hostname --domain)"
 k3s_url="https://$k3s_fqdn:6443"
@@ -178,9 +178,8 @@ spec:
 EOF
 kubectl wait --for jsonpath='{.status.phase}'=Bound pvc/truenas-iscsi-csi-example
 
-# get all the pvc and pv.
-kubectl get pvc -A
-kubectl get pv -A
+# get all the sc, pvc and pv.
+kubectl get sc,pvc,pv -A
 
 # deploy gitea as an example stateful application.
 # see https://gitea.com/gitea/helm-chart/#persistence
