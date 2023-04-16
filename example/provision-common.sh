@@ -7,6 +7,16 @@ interfaces=($(ip link | perl -ne '/\d+: (e[nt].+?): / && print "$1\n"'))
 lan_interface="${interfaces[0]}"
 storage_interface="${interfaces[1]}"
 
+# expand the root partition.
+partition_device="$(findmnt -no SOURCE /)"
+partition_number="$(echo "$partition_device" | perl -ne '/(\d+)$/ && print $1')"
+disk_device="$(echo "$partition_device" | perl -ne '/(.+?)\d+$/ && print $1')"
+parted ---pretend-input-tty "$disk_device" <<EOF
+resizepart $partition_number 100%
+yes
+EOF
+resize2fs "$partition_device"
+
 # configure the storage network interface when running in vsphere.
 dmi_sys_vendor=$(cat /sys/devices/virtual/dmi/id/sys_vendor)
 if [ "$dmi_sys_vendor" == 'VMware, Inc.' ]; then
