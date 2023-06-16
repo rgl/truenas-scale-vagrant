@@ -5,12 +5,12 @@ variable "disk_size" {
 
 variable "iso_url" {
   type    = string
-  default = "https://download.truenas.com/TrueNAS-SCALE-Bluefin/22.12.2/TrueNAS-SCALE-22.12.2.iso"
+  default = "https://download.truenas.com/TrueNAS-SCALE-Bluefin/22.12.3/TrueNAS-SCALE-22.12.3.iso"
 }
 
 variable "iso_checksum" {
   type    = string
-  default = "sha256:73a86e1ea163d5cd70dd2133b70fdea47ed7bba1a39c8d489110c8d8949562cf"
+  default = "sha256:5eed0c61c6ebb609bce57ef2a1afab15b66e669104da0939a295d4c5b4636891"
 }
 
 variable "vagrant_box" {
@@ -18,7 +18,7 @@ variable "vagrant_box" {
 }
 
 locals {
-  boot_steps = [
+  bios_boot_steps = [
     ["<enter>", "select Start TrueNAS Scale Installation"],
     ["<wait1m>", "wait for the boot to finish"],
     ["<enter><wait3s>", "select 1 Install/Upgrade"],
@@ -27,6 +27,7 @@ locals {
     ["2<enter><wait3s>", "select 2 Root user (not recommended)"],
     ["root<tab><wait3s>", "set the password"],
     ["root<enter><wait3s>", "confirm the password"],
+    ["<wait10s><tab><enter><wait3s>", "use BIOS legacy boot"],
     ["<wait5m>", "wait for the installation to finish"],
     ["<enter><wait3s>", "accept the installation finished prompt"],
     ["3<enter>", "select 3 Reboot System"],
@@ -37,6 +38,7 @@ locals {
     ["service start service=ssh<enter><wait3s>q<wait3s>", "start the ssh service"],
     ["exit<enter><wait15s>", "exit the TrueNAS CLI Shell"],
   ]
+  uefi_boot_steps = [for s in local.bios_boot_steps : s if length(split("BIOS", s[1])) == 1]
 }
 
 source "qemu" "truenas-scale-amd64" {
@@ -44,7 +46,7 @@ source "qemu" "truenas-scale-amd64" {
   accelerator      = "kvm"
   machine_type     = "q35"
   boot_wait        = "5s"
-  boot_steps       = local.boot_steps
+  boot_steps       = local.bios_boot_steps
   shutdown_command = "poweroff"
   disk_cache       = "unsafe"
   disk_discard     = "unmap"
@@ -69,7 +71,7 @@ source "qemu" "truenas-scale-uefi-amd64" {
   accelerator      = "kvm"
   machine_type     = "q35"
   boot_wait        = "5s"
-  boot_steps       = local.boot_steps
+  boot_steps       = local.uefi_boot_steps
   shutdown_command = "poweroff"
   disk_discard     = "unmap"
   disk_interface   = "virtio-scsi"
