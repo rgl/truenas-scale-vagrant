@@ -72,7 +72,6 @@ Vagrant.configure(2) do |config|
 
   config.vm.define :truenas do |config|
     config.vm.box = 'truenas-scale-22.12-amd64'
-    # config.vm.box = 'truenas-scale-22.12-uefi-amd64'
     config.vm.provider 'libvirt' do |lv, config|
       lv.memory = 8*1024
       lv.cpus = 2

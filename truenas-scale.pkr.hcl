@@ -18,7 +18,7 @@ variable "vagrant_box" {
 }
 
 locals {
-  bios_boot_steps = [
+  boot_steps = [
     ["<enter>", "select Start TrueNAS Scale Installation"],
     ["<wait1m>", "wait for the boot to finish"],
     ["<enter><wait3s>", "select 1 Install/Upgrade"],
@@ -27,7 +27,6 @@ locals {
     ["1<enter><wait3s>", "select 1 Administrative user (admin)"],
     ["admin<tab><wait3s>", "set the password"],
     ["admin<enter><wait3s>", "confirm the password"],
-    ["<wait10s><tab><enter><wait3s>", "use BIOS legacy boot"],
     ["<wait5m>", "wait for the installation to finish"],
     ["<enter><wait3s>", "accept the installation finished prompt"],
     ["3<enter>", "select 3 Reboot System"],
@@ -40,7 +39,6 @@ locals {
     ["service start service=ssh<enter><wait3s>q<wait3s>", "start the ssh service"],
     ["exit<enter><wait15s>", "exit the TrueNAS CLI Shell"],
   ]
-  uefi_boot_steps = [for s in local.bios_boot_steps : s if length(split("BIOS", s[1])) == 1]
 }
 
 source "qemu" "truenas-scale-amd64" {
@@ -48,32 +46,7 @@ source "qemu" "truenas-scale-amd64" {
   accelerator      = "kvm"
   machine_type     = "q35"
   boot_wait        = "5s"
-  boot_steps       = local.bios_boot_steps
-  shutdown_command = "sudo poweroff"
-  disk_cache       = "unsafe"
-  disk_discard     = "unmap"
-  disk_interface   = "virtio-scsi"
-  disk_size        = var.disk_size
-  format           = "qcow2"
-  net_device       = "virtio-net"
-  iso_checksum     = var.iso_checksum
-  iso_url          = var.iso_url
-  cpus             = 2
-  memory           = 8 * 1024
-  qemuargs = [
-    ["-cpu", "host"],
-  ]
-  ssh_username = "admin"
-  ssh_password = "admin"
-  ssh_timeout  = "60m"
-}
-
-source "qemu" "truenas-scale-uefi-amd64" {
-  headless         = true
-  accelerator      = "kvm"
-  machine_type     = "q35"
-  boot_wait        = "5s"
-  boot_steps       = local.uefi_boot_steps
+  boot_steps       = local.boot_steps
   shutdown_command = "sudo poweroff"
   disk_discard     = "unmap"
   disk_interface   = "virtio-scsi"
@@ -99,7 +72,6 @@ source "qemu" "truenas-scale-uefi-amd64" {
 build {
   sources = [
     "source.qemu.truenas-scale-amd64",
-    "source.qemu.truenas-scale-uefi-amd64",
   ]
 
   provisioner "shell" {
@@ -109,18 +81,7 @@ build {
   }
 
   post-processor "vagrant" {
-    only = [
-      "qemu.truenas-scale-amd64",
-    ]
     output               = var.vagrant_box
     vagrantfile_template = "Vagrantfile.template"
-  }
-
-  post-processor "vagrant" {
-    only = [
-      "qemu.truenas-scale-uefi-amd64",
-    ]
-    output               = var.vagrant_box
-    vagrantfile_template = "Vagrantfile-uefi.template"
   }
 }

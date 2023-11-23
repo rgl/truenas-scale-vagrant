@@ -65,7 +65,7 @@ variable "vsphere_os_iso" {
 }
 
 locals {
-  bios_boot_steps = [
+  boot_steps = [
     ["<enter>", "select Start TrueNAS Scale Installation"],
     ["<wait1m>", "wait for the boot to finish"],
     ["<enter><wait3s>", "select 1 Install/Upgrade"],
@@ -74,7 +74,6 @@ locals {
     ["1<enter><wait3s>", "select 1 Administrative user (admin)"],
     ["admin<tab><wait3s>", "set the password"],
     ["admin<enter><wait3s>", "confirm the password"],
-    ["<wait10s><tab><enter><wait3s>", "use BIOS legacy boot"],
     ["<wait5m>", "wait for the installation to finish"],
     ["<enter><wait3s>", "accept the installation finished prompt"],
     ["3<enter>", "select 3 Reboot System"],
@@ -87,14 +86,15 @@ locals {
     ["service start service=ssh<enter><wait3s>q<wait3s>", "start the ssh service"],
     ["exit<enter><wait15s>", "exit the TrueNAS CLI Shell"],
   ]
-  bios_boot_command = flatten([for step in local.bios_boot_steps : [step[0]]])
+  boot_command = flatten([for step in local.boot_steps : [step[0]]])
 }
 
 source "vsphere-iso" "truenas-scale-amd64" {
+  firmware            = "efi"
   CPUs                = 2
   RAM                 = 8 * 1024
   boot_wait           = "5s"
-  boot_command        = local.bios_boot_command
+  boot_command        = local.boot_command
   shutdown_command    = "sudo poweroff"
   convert_to_template = true
   insecure_connection = true
