@@ -579,7 +579,7 @@ export GOVC_PASSWORD='password'
 export GOVC_DATACENTER='Datacenter'
 export GOVC_CLUSTER='Cluster'
 export GOVC_DATASTORE='Datastore'
-export VSPHERE_OS_ISO="[$GOVC_DATASTORE] iso/TrueNAS-SCALE-22.12.1.iso"
+export VSPHERE_OS_ISO="[$GOVC_DATASTORE] iso/TrueNAS-SCALE-22.12.4.2.iso"
 export VSPHERE_ESXI_HOST='esxi.local'
 export VSPHERE_TEMPLATE_FOLDER='test/templates'
 export VSPHERE_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/truenas-scale-22.12-amd64-vsphere"
@@ -667,5 +667,5 @@ current steps and corresponding answers.
 * [openzfs/zfs repository](https://github.com/openzfs/zfs)
 * [Using the TrueNAS CLI Shell](https://www.truenas.com/docs/scale/scaletutorials/truenasclishell/)
 * [midcli: TrueNAS SCALE CLI](https://github.com/truenas/midcli)
-* [truenas-installer: TrueNAS SCALE Installer](https://github.com/truenas/truenas-installer/blob/TS-22.12.1/usr/sbin/truenas-install)
+* [truenas-installer: TrueNAS SCALE Installer](https://github.com/truenas/truenas-installer/blob/TS-22.12.4.2/usr/sbin/truenas-install)
 * [democratic-csi: TrueNAS SCALE Kubernetes CSI provider](https://github.com/democratic-csi/democratic-csi)

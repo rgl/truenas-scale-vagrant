@@ -5,12 +5,12 @@ variable "disk_size" {
 
 variable "iso_url" {
   type    = string
-  default = "https://download.truenas.com/TrueNAS-SCALE-Bluefin/22.12.3/TrueNAS-SCALE-22.12.3.iso"
+  default = "https://download.sys.truenas.net/TrueNAS-SCALE-Bluefin/22.12.4.2/TrueNAS-SCALE-22.12.4.2.iso"
 }
 
 variable "iso_checksum" {
   type    = string
-  default = "sha256:5eed0c61c6ebb609bce57ef2a1afab15b66e669104da0939a295d4c5b4636891"
+  default = "sha256:bf3997ea2c47a96f63518b63ce26a213fe4c9d9f5e2afec463f93ebac4acbbb6"
 }
 
 variable "vagrant_box" {
