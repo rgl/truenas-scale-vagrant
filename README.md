@@ -73,7 +73,7 @@ function api {
     # NB to use an api key, replace --user, --password and --auth-no-challenge,
     #    with --header, e.g.:
     #       wget -qO- --header "Authorization: Bearer $api_key" "$@"
-    wget -qO- --user root --password root --auth-no-challenge "$truenas_api_base_url/$@"
+    wget -qO- --user admin --password admin --auth-no-challenge "$truenas_api_base_url/$@"
 }
 api system/state | jq -r
 api system/general | jq
@@ -637,25 +637,27 @@ answer all the installer questions through the packer `boot_steps` interface. Th
 quite fragile, so be aware when you change anything. The following table describes the
 current steps and corresponding answers.
 
-| step                                          | boot_steps                                                    |
-|----------------------------------------------:|---------------------------------------------------------------|
-| select Start TrueNAS Scale Installation       | `<enter>`                                                     |
-| wait for the boot to finish                   | `<wait1m>`                                                    |
-| select 1 Install/Upgrade                      | `<enter><wait3s>`                                             |
-| choose destination media                      | ` <enter><wait3s>`                                            |
-| proceed with the installation                 | `<enter><wait3s>`                                             |
-| select 2 Root user (not recommended)          | `2<enter><wait3s>`                                            |
-| set the password                              | `root<tab><wait3s>`                                           |
-| confirm the password                          | `root<enter><wait3s>`                                         |
-| wait for the installation to finish           | `<wait5m>`                                                    |
-| accept the installation finished prompt       | `<enter><wait3s>`                                             |
-| select 3 Reboot System                        | `3<enter>`                                                    |
-| wait for the reboot to finish                 | `<wait5m>`                                                    |
-| select 6 Open TrueNAS CLI Shell               | `6<enter><wait3s>`                                            |
-| enable root login                             | `service ssh update rootlogin=true<enter><wait3s>`            |
-| automatically start the ssh service on boot   | `service update id_or_name=ssh enable=true<enter><wait3s>`    |
-| start the ssh service                         | `service start service=ssh<enter><wait3s>q<wait3s>`           |
-| exit the TrueNAS CLI Shell                    | `exit<enter><wait15s>`                                        |
+| step                                          | boot_steps                                                                                |
+|----------------------------------------------:|-------------------------------------------------------------------------------------------|
+| select Start TrueNAS Scale Installation       | `<enter>`                                                                                 |
+| wait for the boot to finish                   | `<wait1m>`                                                                                |
+| select 1 Install/Upgrade                      | `<enter><wait3s>`                                                                         |
+| choose destination media                      | ` <enter><wait3s>`                                                                        |
+| proceed with the installation                 | `<enter><wait3s>`                                                                         |
+| select 1 Administrative user (admin)          | `1<enter><wait3s>`                                                                        |
+| set the password                              | `admin<tab><wait3s>`                                                                      |
+| confirm the password                          | `admin<enter><wait3s>`                                                                    |
+| wait for the installation to finish           | `<wait5m>`                                                                                |
+| accept the installation finished prompt       | `<enter><wait3s>`                                                                         |
+| select 3 Reboot System                        | `3<enter>`                                                                                |
+| wait for the reboot to finish                 | `<wait5m>`                                                                                |
+| select 6 Open TrueNAS CLI Shell               | `6<enter><wait3s>`                                                                        |
+| configure the admin sudo command              | `account user update uid_or_username=admin sudo_commands_nopasswd="ALL"<enter><wait3s>`   |
+| enable ssh admin login                        | `service ssh update adminlogin=true<enter><wait3s>`                                       |
+| enable ssh password authentication            | `service ssh update passwordauth=true<enter><wait3s>`                                     |
+| automatically start the ssh service on boot   | `service update id_or_name=ssh enable=true<enter><wait3s>`                                |
+| start the ssh service                         | `service start service=ssh<enter><wait3s>q<wait3s>`                                       |
+| exit the TrueNAS CLI Shell                    | `exit<enter><wait15s>`                                                                    |
 
 # Reference
 

@@ -1,6 +1,6 @@
 Vagrant.configure(2) do |config|
-  config.ssh.username = 'root'
-  config.ssh.password = 'root'
+  config.ssh.username = 'admin'
+  config.ssh.password = 'admin'
   config.vm.provider 'libvirt' do |lv|
     lv.machine_type = 'q35'
     lv.graphics_type = 'spice'

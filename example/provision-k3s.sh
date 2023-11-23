@@ -122,8 +122,8 @@ driver:
       protocol: http
       host: $truenas_ip_address
       port: 80
-      username: root
-      password: root
+      username: admin
+      password: admin
     zfs:
       datasetProperties:
         "org.freenas:description": "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}/{{ parameters.[csi.storage.k8s.io/pvc/name] }}"

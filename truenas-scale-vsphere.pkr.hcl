@@ -71,16 +71,18 @@ locals {
     ["<enter><wait3s>", "select 1 Install/Upgrade"],
     [" <enter><wait3s>", "choose destination media"],
     ["<enter><wait3s>", "proceed with the installation"],
-    ["2<enter><wait3s>", "select 2 Root user (not recommended)"],
-    ["root<tab><wait3s>", "set the password"],
-    ["root<enter><wait3s>", "confirm the password"],
+    ["1<enter><wait3s>", "select 1 Administrative user (admin)"],
+    ["admin<tab><wait3s>", "set the password"],
+    ["admin<enter><wait3s>", "confirm the password"],
     ["<wait10s><tab><enter><wait3s>", "use BIOS legacy boot"],
     ["<wait5m>", "wait for the installation to finish"],
     ["<enter><wait3s>", "accept the installation finished prompt"],
     ["3<enter>", "select 3 Reboot System"],
     ["<wait5m>", "wait for the reboot to finish"],
     ["6<enter><wait3s>", "select 6 Open TrueNAS CLI Shell"],
-    ["service ssh update rootlogin=true<enter><wait3s>", "enable root login"],
+    ["account user update uid_or_username=admin sudo_commands_nopasswd=\"ALL\"<enter><wait3s>", "configure the admin sudo command"],
+    ["service ssh update adminlogin=true<enter><wait3s>", "enable ssh admin login"],
+    ["service ssh update passwordauth=true<enter><wait3s>", "enable ssh password authentication"],
     ["service update id_or_name=ssh enable=true<enter><wait3s>", "automatically start the ssh service on boot"],
     ["service start service=ssh<enter><wait3s>q<wait3s>", "start the ssh service"],
     ["exit<enter><wait15s>", "exit the TrueNAS CLI Shell"],
@@ -93,7 +95,7 @@ source "vsphere-iso" "truenas-scale-amd64" {
   RAM                 = 8 * 1024
   boot_wait           = "5s"
   boot_command        = local.bios_boot_command
-  shutdown_command    = "poweroff"
+  shutdown_command    = "sudo poweroff"
   convert_to_template = true
   insecure_connection = true
   vcenter_server      = var.vsphere_host
@@ -119,8 +121,8 @@ source "vsphere-iso" "truenas-scale-amd64" {
     disk_thin_provisioned = true
   }
   disk_controller_type = ["pvscsi"]
-  ssh_password         = "root"
-  ssh_username         = "root"
+  ssh_password         = "admin"
+  ssh_username         = "admin"
   ssh_timeout          = "60m"
 }
 

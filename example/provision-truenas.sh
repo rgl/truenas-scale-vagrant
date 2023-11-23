@@ -17,7 +17,7 @@ function api {
     # NB to use an api key, replace --user, --password and --auth-no-challenge,
     #    with --header, e.g.:
     #       wget -qO- --header "Authorization: Bearer $api_key" "$@"
-    wget -qO- --user root --password root --auth-no-challenge "$@"
+    wget -qO- --user admin --password admin --auth-no-challenge "$@"
 }
 
 # create an local zfs volume and share it as an smb volume.

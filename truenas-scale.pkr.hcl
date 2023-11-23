@@ -24,16 +24,18 @@ locals {
     ["<enter><wait3s>", "select 1 Install/Upgrade"],
     [" <enter><wait3s>", "choose destination media"],
     ["<enter><wait3s>", "proceed with the installation"],
-    ["2<enter><wait3s>", "select 2 Root user (not recommended)"],
-    ["root<tab><wait3s>", "set the password"],
-    ["root<enter><wait3s>", "confirm the password"],
+    ["1<enter><wait3s>", "select 1 Administrative user (admin)"],
+    ["admin<tab><wait3s>", "set the password"],
+    ["admin<enter><wait3s>", "confirm the password"],
     ["<wait10s><tab><enter><wait3s>", "use BIOS legacy boot"],
     ["<wait5m>", "wait for the installation to finish"],
     ["<enter><wait3s>", "accept the installation finished prompt"],
     ["3<enter>", "select 3 Reboot System"],
     ["<wait5m>", "wait for the reboot to finish"],
     ["6<enter><wait3s>", "select 6 Open TrueNAS CLI Shell"],
-    ["service ssh update rootlogin=true<enter><wait3s>", "enable root login"],
+    ["account user update uid_or_username=admin sudo_commands_nopasswd=\"ALL\"<enter><wait3s>", "configure the admin sudo command"],
+    ["service ssh update adminlogin=true<enter><wait3s>", "enable ssh admin login"],
+    ["service ssh update passwordauth=true<enter><wait3s>", "enable ssh password authentication"],
     ["service update id_or_name=ssh enable=true<enter><wait3s>", "automatically start the ssh service on boot"],
     ["service start service=ssh<enter><wait3s>q<wait3s>", "start the ssh service"],
     ["exit<enter><wait15s>", "exit the TrueNAS CLI Shell"],
@@ -47,7 +49,7 @@ source "qemu" "truenas-scale-amd64" {
   machine_type     = "q35"
   boot_wait        = "5s"
   boot_steps       = local.bios_boot_steps
-  shutdown_command = "poweroff"
+  shutdown_command = "sudo poweroff"
   disk_cache       = "unsafe"
   disk_discard     = "unmap"
   disk_interface   = "virtio-scsi"
@@ -61,8 +63,8 @@ source "qemu" "truenas-scale-amd64" {
   qemuargs = [
     ["-cpu", "host"],
   ]
-  ssh_username = "root"
-  ssh_password = "root"
+  ssh_username = "admin"
+  ssh_password = "admin"
   ssh_timeout  = "60m"
 }
 
@@ -72,7 +74,7 @@ source "qemu" "truenas-scale-uefi-amd64" {
   machine_type     = "q35"
   boot_wait        = "5s"
   boot_steps       = local.uefi_boot_steps
-  shutdown_command = "poweroff"
+  shutdown_command = "sudo poweroff"
   disk_discard     = "unmap"
   disk_interface   = "virtio-scsi"
   disk_size        = var.disk_size
@@ -89,8 +91,8 @@ source "qemu" "truenas-scale-uefi-amd64" {
     ["-device", "virtio-scsi-pci,id=scsi0"],
     ["-device", "scsi-hd,bus=scsi0.0,drive=drive0"],
   ]
-  ssh_username = "root"
-  ssh_password = "root"
+  ssh_username = "admin"
+  ssh_password = "admin"
   ssh_timeout  = "60m"
 }
 
