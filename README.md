@@ -647,6 +647,7 @@ current steps and corresponding answers.
 | select 1 Administrative user (admin)          | `1<enter><wait3s>`                                                                        |
 | set the password                              | `admin<tab><wait3s>`                                                                      |
 | confirm the password                          | `admin<enter><wait3s>`                                                                    |
+| do not create swap partition on boot devices  | `N<wait3s>` (only set when `var.disk_size` is 64GB+)                                      |
 | wait for the installation to finish           | `<wait5m>`                                                                                |
 | accept the installation finished prompt       | `<enter><wait3s>`                                                                         |
 | select 3 Reboot System                        | `3<enter>`                                                                                |

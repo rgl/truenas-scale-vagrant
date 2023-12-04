@@ -74,6 +74,7 @@ locals {
     ["1<enter><wait3s>", "select 1 Administrative user (admin)"],
     ["admin<tab><wait3s>", "set the password"],
     ["admin<enter><wait3s>", "confirm the password"],
+    var.disk_size >= 64 * 1024 ? ["N<wait3s>", "do not create swap partition on boot devices"] : null,
     ["<wait5m>", "wait for the installation to finish"],
     ["<enter><wait3s>", "accept the installation finished prompt"],
     ["3<enter>", "select 3 Reboot System"],
