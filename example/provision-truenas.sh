@@ -35,7 +35,7 @@ function create-smb-volume {
 function create-volume {
     local name="$1"
     local volsize="$(mround $2 $((16*1024)))"
-    local volblocksize='16K' # NB for some odd readon, this is not a decimal like volsize (or both are not strings).
+    local volblocksize='16K' # NB for some odd reason, this is not a decimal like volsize (or both are not strings).
     local shareblocksize="${3:-512}" # NB iPXE/BIOS/int13 can only read 512-byte blocks.
     local ro="${4:-false}"
     local portal_id="$(cli --mode csv --command 'sharing iscsi portal query' | perl -ne '/^(\d+),\d+,storage,/ && print $1')"
@@ -144,16 +144,48 @@ api \
     "http://$ip_address/api/v2.0/iscsi/initiator"
 
 # create the tank pool with the sdb/sdc/sdd disks.
+# NB the disk enumeration is not stable in linux, so we have to find the disks
+#    by their serial number, which can be seen at, e.g.:
+#       /dev/disk/by-id/*_ff00000000000000
 cli --command 'storage disk query'
-pool_topology='{
-    "data": [
-        {"type": "RAIDZ1", "disks": ["sdb", "sdc", "sdd"]}
+function get-disk-by-serial {
+    local serial="$1"
+    local disk="$(
+        lsblk --output NAME,SERIAL --json \
+            | jq \
+                -r \
+                --arg serial "$serial" \
+                '.blockdevices[] | select(.serial == $serial) | .name')"
+    [ -n "$disk" ] && echo "$disk" || false
+}
+function get-pool-disk {
+    local number="$1"
+    if [ -n "$(lspci | grep 'Red Hat' | head -1)" ]; then
+        # in qemu-kvm, use the serial number.
+        get-disk-by-serial "$(printf 'ff000000000000%02x' "$number")"
+    elif [ -n "$(lspci | grep VMware | head -1)" ]; then
+        # in VMware, use the sdb + number device.
+        echo "sd$(printf "\\$(printf '%o' $((98 + $number)))")"
+    else
+        echo 'ERROR: Unknown VM host.' || exit 1
+    fi
+}
+pool_topology="{
+    \"data\": [
+        {
+            \"type\": \"RAIDZ1\",
+            \"disks\": [
+                \"$(get-pool-disk 0)\",
+                \"$(get-pool-disk 1)\",
+                \"$(get-pool-disk 2)\"
+            ]
+        }
     ]
-}'
+}"
 cli --command "storage pool create name=tank topology=$pool_topology"
 cli --mode csv --command 'storage pool query'
 
-# create local zfs volumes and share them as smb volumes.
+# create local zfs data volumes and share them as smb volumes.
 create-smb-volume sw
 if [ -r /vagrant/windows-2022-amd64.iso ]; then
     cp /vagrant/windows-2022-amd64.iso /mnt/tank/sw/
@@ -162,9 +194,11 @@ if [ -r /vagrant/virtio-win-0.1.229.iso ]; then
     cp /vagrant/virtio-win-0.1.229.iso /mnt/tank/sw/
 fi
 
-# create local zfs volumes and share them as iscsi volumes.
+# create local zfs data volumes and share them as iscsi volumes.
 create-volume ubuntu-data $((1*GiB)) 4096
 create-volume windows-data $((1*GiB)) 4096
+
+# create local zfs boot volumes and share them as iscsi volumes.
 if [ -r /vagrant/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso ]; then
     create-volume-from-path debian-live-boot /vagrant/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso 512 true
 else
@@ -181,3 +215,10 @@ zpool status -v
 
 # show all datasets.
 cli --mode csv --command 'storage dataset query'
+
+# summary.
+cat <<EOF
+
+TrueNAS CORE is ready and listening at https://$ip_address
+
+EOF
