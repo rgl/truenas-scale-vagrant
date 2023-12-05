@@ -190,8 +190,8 @@ create-smb-volume sw
 if [ -r /vagrant/windows-2022-amd64.iso ]; then
     cp /vagrant/windows-2022-amd64.iso /mnt/tank/sw/
 fi
-if [ -r /vagrant/virtio-win-0.1.229.iso ]; then
-    cp /vagrant/virtio-win-0.1.229.iso /mnt/tank/sw/
+if [ -r /vagrant/virtio-win-0.1.240.iso ]; then
+    cp /vagrant/virtio-win-0.1.240.iso /mnt/tank/sw/
 fi
 
 # create local zfs data volumes and share them as iscsi volumes.

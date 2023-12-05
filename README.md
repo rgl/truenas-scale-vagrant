@@ -117,8 +117,8 @@ wget -O openSUSE-Leap-15.4-NET-x86_64-Media.iso \
 # see https://github.com/rgl/windows-evaluation-isos-scraper/blob/main/data/windows-2022.json
 wget -O windows-2022-amd64.iso \
     https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x64FRE_en-us.iso
-wget -O virtio-win-0.1.229.iso \
-    https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.229-1/virtio-win-0.1.229.iso
+wget -O virtio-win-0.1.240.iso \
+    https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.240-1/virtio-win-0.1.240.iso
 popd
 ```
 
@@ -553,7 +553,7 @@ Login into Windows and install the guest tools:
 
 ```powershell
 net use s: \\10.10.0.2\sw vagrant /user:vagrant
-Mount-DiskImage s:\virtio-win-0.1.229.iso
+Mount-DiskImage s:\virtio-win-0.1.240.iso
 d:\virtio-win-guest-tools.exe
 ```
 
