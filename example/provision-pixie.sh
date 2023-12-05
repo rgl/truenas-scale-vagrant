@@ -32,8 +32,8 @@ mount -a
 # get wimboot.
 # see http://ipxe.org/wimboot
 
-wimboot_url='https://github.com/ipxe/wimboot/releases/download/v2.7.5/wimboot'
-wimboot_sha='7083f2ea6bb8f7f0801d52d38e6ba25d6e46b0e5b2fb668e65dd0720bf33f7bd'
+wimboot_url='https://github.com/ipxe/wimboot/releases/download/v2.7.6/wimboot'
+wimboot_sha='111a6d1cc6a2a2f7b458d81efeb9c5b3f93f7751a0e79371c049555bb474fc85'
 wimboot_path='/var/pixie/wimboot'
 install -d "$(dirname "$wimboot_path")"
 wget -qO "$wimboot_path" "$wimboot_url"
