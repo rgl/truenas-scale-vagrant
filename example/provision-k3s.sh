@@ -3,13 +3,13 @@ set -euxo pipefail
 
 ip_address="${1:-10.10.0.11}"
 truenas_ip_address="${2:-10.10.0.2}"
-k3s_version="${3:-v1.26.3+k3s1}" # see https://github.com/k3s-io/k3s/releases
-k9s_version="${4:-v0.27.3}" # see https://github.com/derailed/k9s/releases
-helm_version="${5:-v3.11.3}" # see https://github.com/helm/helm/releases
-democratic_csi_chart_version="${6:-0.13.7}" # see https://github.com/democratic-csi/charts/releases
-democratic_csi_tag="${7:-v1.8.3}" # see https://github.com/democratic-csi/democratic-csi/tags
-gitea_chart_version="${8:-8.1.0}" # see https://gitea.com/gitea/helm-chart/tags
-gitea_version="${9:-1.19.1}" # see https://github.com/go-gitea/gitea
+k3s_version="${3:-v1.26.10+k3s2}" # see https://github.com/k3s-io/k3s/releases
+k9s_version="${4:-v0.28.2}" # see https://github.com/derailed/k9s/releases
+helm_version="${5:-v3.13.2}" # see https://github.com/helm/helm/releases
+democratic_csi_chart_version="${6:-0.14.2}" # see https://github.com/democratic-csi/charts/releases
+democratic_csi_tag="${7:-v1.8.4}" # see https://github.com/democratic-csi/democratic-csi/tags
+gitea_chart_version="${8:-9.6.1}" # see https://gitea.com/gitea/helm-chart/tags
+gitea_version="${9:-1.21.1}" # see https://github.com/go-gitea/gitea
 fqdn="$(hostname --fqdn)"
 k3s_fqdn="s.$(hostname --domain)"
 k3s_url="https://$k3s_fqdn:6443"
@@ -51,7 +51,7 @@ rm helm
 helm completion bash >/usr/share/bash-completion/completions/helm
 
 # install k3s.
-# see server arguments at e.g. https://github.com/k3s-io/k3s/blob/v1.26.3+k3s1/pkg/cli/cmds/server.go#L549-L557
+# see server arguments at e.g. https://github.com/k3s-io/k3s/blob/v1.26.10+k3s2/pkg/cli/cmds/server.go#L564-L572
 # or run k3s server --help
 # see https://docs.k3s.io/installation/configuration
 # see https://docs.k3s.io/reference/server-config
@@ -81,7 +81,7 @@ install -m 700 -d ~/.kube
 ln -s /etc/rancher/k3s/k3s.yaml ~/.kube/config
 
 # wait for this node to be Ready.
-# e.g. s1     Ready    control-plane,master   3m    v1.26.3+k3s1
+# e.g. s1     Ready    control-plane,master   3m    v1.26.10+k3s2
 $SHELL -c 'node_name=$(hostname); echo "waiting for node $node_name to be ready..."; while [ -z "$(kubectl get nodes $node_name | grep -E "$node_name\s+Ready\s+")" ]; do sleep 3; done; echo "node ready!"'
 
 # wait for the kube-dns pod to be Running.
