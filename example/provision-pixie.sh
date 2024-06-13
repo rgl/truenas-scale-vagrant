@@ -31,16 +31,14 @@ mount -a
 #
 # get wimboot.
 # see http://ipxe.org/wimboot
+# see https://github.com/ipxe/wimboot
 
-wimboot_url='https://github.com/ipxe/wimboot/releases/download/v2.7.6/wimboot'
-wimboot_sha='111a6d1cc6a2a2f7b458d81efeb9c5b3f93f7751a0e79371c049555bb474fc85'
+# renovate: datasource=github-releases depName=ipxe/wimboot
+wimboot_version='2.8.0'
+wimboot_url="https://github.com/ipxe/wimboot/releases/download/v$wimboot_version/wimboot"
 wimboot_path='/var/pixie/wimboot'
 install -d "$(dirname "$wimboot_path")"
 wget -qO "$wimboot_path" "$wimboot_url"
-if [ "$(sha256sum "$wimboot_path" | awk '{print $1}')" != "$wimboot_sha" ]; then
-  echo "downloaded $wimboot_url failed the checksum verification"
-  exit 1
-fi
 
 
 #
