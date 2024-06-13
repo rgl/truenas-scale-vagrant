@@ -81,7 +81,7 @@ locals {
     ["<wait5m>", "wait for the reboot to finish"],
     ["6<enter><wait3s>", "select 6 Open TrueNAS CLI Shell"],
     ["account user update uid_or_username=admin sudo_commands_nopasswd=\"ALL\"<enter><wait3s>", "configure the admin sudo command"],
-    ["service ssh update adminlogin=true<enter><wait3s>", "enable ssh admin login"],
+    ["service ssh update password_login_groups=[\"builtin_administrators\"]<enter><wait3s>", "set the ssh password authentication login groups"],
     ["service ssh update passwordauth=true<enter><wait3s>", "enable ssh password authentication"],
     ["service update id_or_name=ssh enable=true<enter><wait3s>", "automatically start the ssh service on boot"],
     ["service start service=ssh<enter><wait3s>q<wait3s>", "start the ssh service"],

@@ -1,8 +1,9 @@
 #!/bin/bash
 set -euxo pipefail
 
-ip_address="${1:-10.10.0.2}"
-mtu="${2:-9000}"
+host_mount_path="${1:-/dev/shm/vagrant}"
+ip_address="${2:-10.10.0.2}"
+mtu="${3:-9000}"
 
 KiB=$((1024))
 MiB=$((1024*KiB))
@@ -28,7 +29,7 @@ function create-smb-volume {
     zfs get all "tank/$name"
     # share the zfs volume.
     # see cli --command 'sharing smb query'
-    cli --command "sharing smb create name=\"$name\" path=\"/mnt/tank/$name\" purpose=READ_ONLY ro=true"
+    cli --command "sharing smb create name=\"$name\" path=\"/mnt/tank/$name\" purpose=MULTI_PROTOCOL_NFS ro=true"
 }
 
 # create an local zfs volume and share it as an iscsi volume at lun 0.
@@ -64,8 +65,8 @@ function create-volume-from-path {
     local ro="${4:-false}"
     volsize=$(qemu-img info "$img_path" | perl -ne '/^virtual size: .+ \((\d+) bytes\)/ && print $1')
     create-volume "$name" "$volsize" "$shareblocksize" "$ro"
-    qemu-img convert -O raw "$img_path" "/dev/tank/$name"
-    fdisk -l "/dev/tank/$name"
+    qemu-img convert -O raw "$img_path" "/dev/zvol/tank/$name"
+    fdisk -l "/dev/zvol/tank/$name"
 }
 
 function create-volume-from-url {
@@ -187,11 +188,11 @@ cli --mode csv --command 'storage pool query'
 
 # create local zfs data volumes and share them as smb volumes.
 create-smb-volume sw
-if [ -r /vagrant/windows-2022-amd64.iso ]; then
-    cp /vagrant/windows-2022-amd64.iso /mnt/tank/sw/
+if [ -r $host_mount_path/windows-2022-amd64.iso ]; then
+    cp $host_mount_path/windows-2022-amd64.iso /mnt/tank/sw/
 fi
-if [ -r /vagrant/virtio-win-0.1.240.iso ]; then
-    cp /vagrant/virtio-win-0.1.240.iso /mnt/tank/sw/
+if [ -r $host_mount_path/virtio-win-0.1.240.iso ]; then
+    cp $host_mount_path/virtio-win-0.1.240.iso /mnt/tank/sw/
 fi
 
 # create local zfs data volumes and share them as iscsi volumes.
@@ -199,13 +200,13 @@ create-volume ubuntu-data $((1*GiB)) 4096
 create-volume windows-data $((1*GiB)) 4096
 
 # create local zfs boot volumes and share them as iscsi volumes.
-if [ -r /vagrant/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso ]; then
-    create-volume-from-path debian-live-boot /vagrant/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso 512 true
+if [ -r $host_mount_path/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso ]; then
+    create-volume-from-path debian-live-boot $host_mount_path/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso 512 true
 else
     create-volume-from-url debian-live-boot https://github.com/rgl/debian-live-builder-vagrant/releases/download/v20230407/debian-live-20230407-amd64.iso 512 true
 fi
-if [ -r /vagrant/tmp/ubuntu-vagrant/box.img ]; then
-    create-volume-from-path ubuntu-boot /vagrant/tmp/ubuntu-vagrant/box.img 512
+if [ -r $host_mount_path/tmp/ubuntu-vagrant/box.img ]; then
+    create-volume-from-path ubuntu-boot $host_mount_path/tmp/ubuntu-vagrant/box.img 512
 fi
 create-volume opensuse-boot $((16*GiB)) 512
 create-volume windows-boot $((32*GiB)) 512

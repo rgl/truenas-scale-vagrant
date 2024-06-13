@@ -105,7 +105,7 @@ Build the box and add it to the local vagrant installation:
 
 ```bash
 time make build-libvirt
-vagrant box add -f truenas-scale-22.12-amd64 truenas-scale-22.12-amd64-libvirt.box.json
+vagrant box add -f truenas-scale-24.04-amd64 truenas-scale-24.04-amd64-libvirt.box.json
 ```
 
 Download the example ISOs:
@@ -579,14 +579,14 @@ export GOVC_PASSWORD='password'
 export GOVC_DATACENTER='Datacenter'
 export GOVC_CLUSTER='Cluster'
 export GOVC_DATASTORE='Datastore'
-export VSPHERE_OS_ISO="[$GOVC_DATASTORE] iso/TrueNAS-SCALE-22.12.4.2.iso"
+export VSPHERE_OS_ISO="[$GOVC_DATASTORE] iso/TrueNAS-SCALE-24.04.1.1.iso"
 export VSPHERE_ESXI_HOST='esxi.local'
 export VSPHERE_TEMPLATE_FOLDER='test/templates'
-export VSPHERE_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/truenas-scale-22.12-amd64-vsphere"
+export VSPHERE_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/truenas-scale-24.04-amd64-vsphere"
 export VSPHERE_UBUNTU_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/ubuntu-22.04-amd64-vsphere"
 export VSPHERE_WINDOWS_TEMPLATE_NAME="$VSPHERE_TEMPLATE_FOLDER/windows-2022-amd64-vsphere"
 export VSPHERE_VM_FOLDER='test'
-export VSPHERE_VM_NAME='truenas-scale-22.12-vagrant-example'
+export VSPHERE_VM_NAME='truenas-scale-24.04-vagrant-example'
 export VSPHERE_PIXIE_VM_NAME='ubuntu-22.04-pixie-vagrant-example'
 export VSPHERE_UBUNTU_VM_NAME='ubuntu-22.04-vagrant-example'
 export VSPHERE_K3S_VM_NAME='ubuntu-22.04-k3s-vagrant-example'
@@ -668,5 +668,5 @@ current steps and corresponding answers.
 * [openzfs/zfs repository](https://github.com/openzfs/zfs)
 * [Using the TrueNAS CLI Shell](https://www.truenas.com/docs/scale/scaletutorials/truenasclishell/)
 * [midcli: TrueNAS SCALE CLI](https://github.com/truenas/midcli)
-* [truenas-installer: TrueNAS SCALE Installer](https://github.com/truenas/truenas-installer/blob/TS-22.12.4.2/usr/sbin/truenas-install)
+* [truenas-installer: TrueNAS SCALE Installer](https://github.com/truenas/truenas-installer/blob/TS-24.04.1.1/usr/sbin/truenas-install)
 * [democratic-csi: TrueNAS SCALE Kubernetes CSI provider](https://github.com/democratic-csi/democratic-csi)

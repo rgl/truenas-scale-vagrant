@@ -1,7 +1,7 @@
 SHELL=bash
 .SHELLFLAGS=-euo pipefail -c
 
-VERSION=22.12
+VERSION=24.04
 
 help:
 	@echo type make build-libvirt

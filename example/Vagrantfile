@@ -24,6 +24,9 @@ CONFIG_STORAGE_DISKS        = ['sdb', 'sdc', 'sdd']
 CONFIG_STORAGE_DISK_SIZE_GB = 64
 CONFIG_STORAGE_MTU          = 9000
 
+CONFIG_TRUENAS_TMP_PATH = '/dev/shm'
+CONFIG_TRUENAS_HOST_MOUNT_PATH = "#{CONFIG_TRUENAS_TMP_PATH}/vagrant"
+
 require 'open3'
 
 Vagrant.configure(2) do |config|
@@ -71,10 +74,10 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :truenas do |config|
-    config.vm.box = 'truenas-scale-22.12-amd64'
+    config.vm.box = 'truenas-scale-24.04-amd64'
     config.vm.provider 'libvirt' do |lv, config|
       lv.memory = 8*1024
-      lv.cpus = 2
+      lv.cpus = 4
       # add the storage disks.
       CONFIG_STORAGE_DISKS.each_with_index do |disk_name, index|
         lv.storage :file,
@@ -84,7 +87,7 @@ Vagrant.configure(2) do |config|
           :cache => 'unsafe',
           :serial => sprintf("ff000000000000%02x", index) # NB will be available at, e.g.: /dev/disk/by-id/*_ff00000000000000
       end
-      config.vm.synced_folder '.', '/vagrant', type: 'nfs', nfs_version: '4.2', nfs_udp: false
+      config.vm.synced_folder '.', CONFIG_TRUENAS_HOST_MOUNT_PATH, type: 'nfs', nfs_version: '4.2', nfs_udp: false
       config.trigger.before :up do |trigger|
         trigger.run = {
           inline: <<~EOF
@@ -126,7 +129,7 @@ Vagrant.configure(2) do |config|
       end
     end
     config.vm.network :private_network, ip: CONFIG_TRUENAS_IP_ADDRESS, auto_config: false, libvirt__mtu: CONFIG_STORAGE_MTU, libvirt__forward_mode: 'none', libvirt__dhcp_enabled: false
-    config.vm.provision 'shell', path: 'provision-truenas.sh', args: [CONFIG_TRUENAS_IP_ADDRESS, CONFIG_STORAGE_MTU]
+    config.vm.provision 'shell', upload_path: "#{CONFIG_TRUENAS_TMP_PATH}/vagrant-shell", path: 'provision-truenas.sh', args: [CONFIG_TRUENAS_HOST_MOUNT_PATH, CONFIG_TRUENAS_IP_ADDRESS, CONFIG_STORAGE_MTU]
   end
 
   config.vm.define :pixie do |config|

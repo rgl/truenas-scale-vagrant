@@ -5,12 +5,12 @@ variable "disk_size" {
 
 variable "iso_url" {
   type    = string
-  default = "https://download.sys.truenas.net/TrueNAS-SCALE-Bluefin/22.12.4.2/TrueNAS-SCALE-22.12.4.2.iso"
+  default = "https://download.sys.truenas.net/TrueNAS-SCALE-Dragonfish/24.04.1.1/TrueNAS-SCALE-24.04.1.1.iso"
 }
 
 variable "iso_checksum" {
   type    = string
-  default = "sha256:bf3997ea2c47a96f63518b63ce26a213fe4c9d9f5e2afec463f93ebac4acbbb6"
+  default = "sha256:966cbd7c9e2cd04b7db388f9ea8c75c869cf22e9e1512554896e6f1b374ed121"
 }
 
 variable "vagrant_box" {
@@ -34,7 +34,7 @@ locals {
     ["<wait5m>", "wait for the reboot to finish"],
     ["6<enter><wait3s>", "select 6 Open TrueNAS CLI Shell"],
     ["account user update uid_or_username=admin sudo_commands_nopasswd=\"ALL\"<enter><wait3s>", "configure the admin sudo command"],
-    ["service ssh update adminlogin=true<enter><wait3s>", "enable ssh admin login"],
+    ["service ssh update password_login_groups=[\"builtin_administrators\"]<enter><wait3s>", "set the ssh password authentication login groups"],
     ["service ssh update passwordauth=true<enter><wait3s>", "enable ssh password authentication"],
     ["service update id_or_name=ssh enable=true<enter><wait3s>", "automatically start the ssh service on boot"],
     ["service start service=ssh<enter><wait3s>q<wait3s>", "start the ssh service"],
@@ -76,6 +76,10 @@ build {
   ]
 
   provisioner "shell" {
+    # NB packer will write the inline script to a .sh file inside the /tmp
+    #    directoy, but that directory is mounted with the noxec flag, so,
+    #    we have to use another directory with exec permissions.
+    remote_folder = "/dev/shm"
     inline = [
       "cat /etc/os-release",
     ]
