@@ -220,6 +220,6 @@ cli --mode csv --command 'storage dataset query'
 # summary.
 cat <<EOF
 
-TrueNAS CORE is ready and listening at https://$ip_address
+TrueNAS SCALE is ready and listening at https://$ip_address
 
 EOF
