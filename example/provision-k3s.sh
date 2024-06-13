@@ -3,13 +3,35 @@ set -euxo pipefail
 
 ip_address="${1:-10.10.0.11}"
 truenas_ip_address="${2:-10.10.0.2}"
-k3s_version="${3:-v1.26.10+k3s2}" # see https://github.com/k3s-io/k3s/releases
-k9s_version="${4:-v0.28.2}" # see https://github.com/derailed/k9s/releases
-helm_version="${5:-v3.13.2}" # see https://github.com/helm/helm/releases
-democratic_csi_chart_version="${6:-0.14.2}" # see https://github.com/democratic-csi/charts/releases
-democratic_csi_tag="${7:-v1.8.4}" # see https://github.com/democratic-csi/democratic-csi/tags
-gitea_chart_version="${8:-9.6.1}" # see https://gitea.com/gitea/helm-chart/tags
-gitea_version="${9:-1.21.1}" # see https://github.com/go-gitea/gitea
+
+# see https://github.com/k3s-io/k3s/releases
+# renovate: datasource=github-releases depName=k3s-io/k3s
+k3s_version='v1.30.1+k3s1'
+
+# see https://github.com/derailed/k9s/releases
+# renovate: datasource=github-releases depName=derailed/k9s
+k9s_version='v0.32.4'
+
+# see https://github.com/helm/helm/releases
+# renovate: datasource=github-releases depName=helm/helm
+helm_version='v3.15.2'
+
+# see https://github.com/democratic-csi/charts/releases
+# renovate: datasource=github-releases depName=democratic-csi/charts extractVersion=democratic-csi-(?<version>.+)
+democratic_csi_chart_version='0.14.6'
+
+# see https://github.com/democratic-csi/democratic-csi/tags
+# renovate: datasource=github-tags depName=democratic-csi/democratic-csi
+democratic_csi_version='v1.9.3'
+
+# see https://gitea.com/gitea/helm-chart/releases
+# renovate: datasource=gitea-releases depName=gitea/helm-chart
+gitea_chart_version='10.2.0'
+
+# see https://github.com/go-gitea/gitea/releases
+# renovate: datasource=github-releases depName=go-gitea/gitea
+gitea_version='1.22.0'
+
 fqdn="$(hostname --fqdn)"
 k3s_fqdn="s.$(hostname --domain)"
 k3s_url="https://$k3s_fqdn:6443"
@@ -51,7 +73,7 @@ rm helm
 helm completion bash >/usr/share/bash-completion/completions/helm
 
 # install k3s.
-# see server arguments at e.g. https://github.com/k3s-io/k3s/blob/v1.26.10+k3s2/pkg/cli/cmds/server.go#L564-L572
+# see server arguments at e.g. https://github.com/k3s-io/k3s/blob/v1.30.1+k3s1/pkg/cli/cmds/server.go#L564-L572
 # or run k3s server --help
 # see https://docs.k3s.io/installation/configuration
 # see https://docs.k3s.io/reference/server-config
@@ -81,7 +103,7 @@ install -m 700 -d ~/.kube
 ln -s /etc/rancher/k3s/k3s.yaml ~/.kube/config
 
 # wait for this node to be Ready.
-# e.g. s1     Ready    control-plane,master   3m    v1.26.10+k3s2
+# e.g. s1     Ready    control-plane,master   3m    v1.30.1+k3s1
 $SHELL -c 'node_name=$(hostname); echo "waiting for node $node_name to be ready..."; while [ -z "$(kubectl get nodes $node_name | grep -E "$node_name\s+Ready\s+")" ]; do sleep 3; done; echo "node ready!"'
 
 # wait for the kube-dns pod to be Running.
@@ -101,10 +123,10 @@ helm search repo democratic-csi/ --versions | head -10
 cat >truenas-api-iscsi-values.yml <<EOF
 controller:
   driver:
-    image: docker.io/democraticcsi/democratic-csi:$democratic_csi_tag
+    image: docker.io/democraticcsi/democratic-csi:$democratic_csi_version
 node:
   driver:
-    image: docker.io/democraticcsi/democratic-csi:$democratic_csi_tag
+    image: docker.io/democraticcsi/democratic-csi:$democratic_csi_version
 csiDriver:
   name: org.democratic-csi.iscsi
 storageClasses:
