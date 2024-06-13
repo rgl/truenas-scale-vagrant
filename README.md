@@ -93,6 +93,12 @@ storage) and login with the `gitea` username and the `abracadabra` password:
 
 http://git.example.com
 
+List this repository dependencies (and which have newer versions):
+
+```bash
+GITHUB_COM_TOKEN='YOUR_GITHUB_PERSONAL_TOKEN' ./renovate.sh
+```
+
 ## libvirt usage
 
 Install [`packer`](https://github.com/hashicorp/packer), [`vagrant`](https://github.com/hashicorp/vagrant), [`vagrant-libvirt`](https://github.com/vagrant-libvirt/vagrant-libvirt), and [`libvirt`](https://github.com/libvirt/libvirt) (see the [rgl/my-ubuntu-ansible-playbooks repository](https://github.com/rgl/my-ubuntu-ansible-playbooks)).
