@@ -203,7 +203,9 @@ create-volume windows-data $((1*GiB)) 4096
 if [ -r $host_mount_path/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso ]; then
     create-volume-from-path debian-live-boot $host_mount_path/tmp/debian-live-builder-vagrant/live-image-amd64.hybrid.iso 512 true
 else
-    create-volume-from-url debian-live-boot https://github.com/rgl/debian-live-builder-vagrant/releases/download/v20230407/debian-live-20230407-amd64.iso 512 true
+    # renovate: datasource=github-releases depName=rgl/debian-live-builder-vagrant
+    debian_live_boot_version='20240416'
+    create-volume-from-url debian-live-boot https://github.com/rgl/debian-live-builder-vagrant/releases/download/v$debian_live_boot_version/debian-live-$debian_live_boot_version-amd64.iso 512 true
 fi
 if [ -r $host_mount_path/tmp/ubuntu-vagrant/box.img ]; then
     create-volume-from-path ubuntu-boot $host_mount_path/tmp/ubuntu-vagrant/box.img 512
