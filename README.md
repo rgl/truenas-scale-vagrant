@@ -153,6 +153,15 @@ Start:
 time vagrant up --provider=libvirt --no-destroy-on-error --no-tty ubuntu
 ```
 
+Enter the `ubuntu` VM, and write something to the shared volume:
+
+```bash
+vagrant ssh ubuntu
+sudo -i
+echo "hello, world!" >/mnt/ubuntu-data/message.txt
+ll /mnt/ubuntu-data
+```
+
 ### k3s
 
 Start:
@@ -186,6 +195,14 @@ Start:
 
 ```bash
 time vagrant up --provider=libvirt --no-destroy-on-error --no-tty windows
+```
+
+Enter the `windows` VM, and write something to the shared volume:
+
+```bash
+vagrant ssh windows -- pwsh
+Set-Content d:/message.txt "hello, world!"
+Get-ChildItem d:/
 ```
 
 ### debian_live_boot
