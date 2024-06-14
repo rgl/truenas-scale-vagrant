@@ -535,7 +535,7 @@ Show iSCSI information:
 ```powershell
 netsh interface ipv4 show interfaces
 iscsicli ReportTargetMappings
-Get-Disk | Where-Object { $_.BusType -eq 'iSCSI' }
+Get-Disk | Where-Object { $_.BusType -eq 'iSCSI' } | Format-Table -AutoSize
 Get-IscsiSession
 ```
 
