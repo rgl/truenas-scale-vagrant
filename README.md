@@ -238,21 +238,21 @@ ip addr
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
     inet 127.0.0.1/8 scope host lo
        valid_lft forever preferred_lft forever
-    inet6 ::1/128 scope host 
+    inet6 ::1/128 scope host
        valid_lft forever preferred_lft forever
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
     link/ether 52:54:00:da:4c:51 brd ff:ff:ff:ff:ff:ff
     altname enp5s0
     inet 192.168.121.202/24 metric 100 brd 192.168.121.255 scope global eth0
        valid_lft forever preferred_lft forever
-    inet6 fe80::5054:ff:feda:4c51/64 scope link 
+    inet6 fe80::5054:ff:feda:4c51/64 scope link
        valid_lft forever preferred_lft forever
 3: eth1: <BROADCAST,UP,LOWER_UP> mtu 9000 qdisc pfifo_fast state UP group default qlen 1000
     link/ether 08:00:27:00:00:21 brd ff:ff:ff:ff:ff:ff
     altname enp6s0
     inet 10.10.0.21/24 brd 10.10.0.255 scope global eth1
        valid_lft forever preferred_lft forever
-    inet6 fe80::a00:27ff:fe00:21/64 scope link 
+    inet6 fe80::a00:27ff:fe00:21/64 scope link
        valid_lft forever preferred_lft forever
 ```
 
@@ -300,7 +300,7 @@ fdisk -l
 ```
 ```
 Disk /dev/sda: 8 GiB, 8589934592 bytes, 16777216 sectors
-Disk model: iSCSI Disk      
+Disk model: iSCSI Disk
 Units: sectors of 1 * 512 = 512 bytes
 Sector size (logical/physical): 512 bytes / 16384 bytes
 I/O size (minimum/optimal): 16384 bytes / 16384 bytes
