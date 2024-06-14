@@ -18,7 +18,10 @@ install -d /var/pixie/windows-pe-iso
 if [ -e /vagrant/tmp/windows-pe-vagrant/winpe-amd64.iso ]; then
   iso_path='/vagrant/tmp/windows-pe-vagrant/winpe-amd64.iso'
 else
-  iso_url='https://github.com/rgl/windows-pe-vagrant/releases/download/v20230409/windows-pe-20230409-amd64.iso'
+  # see https://github.com/rgl/windows-pe-vagrant/releases
+  # renovate: datasource=github-releases depName=rgl/windows-pe-vagrant
+  windows_pe_version='20240613'
+  iso_url="https://github.com/rgl/windows-pe-vagrant/releases/download/v$windows_pe_version/windows-pe-$windows_pe_version-amd64.iso"
   iso_path="/vagrant/$(basename "$iso_url")"
   if [ ! -e "$iso_path" ]; then
     wget -qO "$iso_path" "$iso_url"
